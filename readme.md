@@ -6,4 +6,8 @@ Basic API, aiming at giving erlang a fast matrix library. The "basic" pure erlan
 - operators +,-,==,*,*´.
 - row, col, get.
 - zeros, eye.
-- list to matrix, eval. 
+- list to matrix.
+- eval.
+
+# Notes
+Using cblas's GEMM for matrix calculation
