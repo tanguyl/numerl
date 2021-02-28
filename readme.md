@@ -2,11 +2,15 @@
 
 Basic API, aiming at giving erlang a fast matrix library. The "basic" pure erlang implementation is located in mat.erl
 
+
+# DONE
+    - list to matrix.
+    - get.
+
 # API: todo
 - operators +,-,==,*,*´.
 - row, col, get.
 - zeros, eye.
-- list to matrix.
 - eval.
 
 # Notes

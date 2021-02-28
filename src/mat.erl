@@ -3,22 +3,16 @@
 -export([tr/1, inv/1]).
 -export(['+'/2, '-'/2, '=='/2, '*'/2, '*´'/2]).
 -export([row/2, col/2, get/3]).
--export([zeros/2, eye/1]).
--export([eval/1, list_to_matrix/2]).
+-export([zeros/2, eye/1, diag/1]).
+-export([eval/1]).
 
 -export_type([matrix/0]).
 
 -type matrix() :: [[number(), ...], ...].
 
-%% convert a list into a NxM matrix with N = length(List)/M
--spec list_to_matrix(List, M) -> Matrix when
-    List :: list(),
-    M :: pos_integer(),
-    Matrix :: matrix().
-
-list_to_matrix(List, M) ->
-    list_to_matrix(List, M, []).
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% API
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% transpose matrix
 -spec tr(M) -> Transposed when
@@ -72,6 +66,7 @@ tr(M) ->
         || Cj <- M2]
         || Li <- M1].
 
+
 %% return true if M1 equals M2 using 1e-6 precision
 -spec '=='(M1, M2) -> boolean() when
     M1 :: matrix(),
@@ -88,7 +83,7 @@ tr(M) ->
     end.
 
 
-%% get the row I of M
+%% return the row I of M
 -spec row(I, M) -> Row when
     I :: pos_integer(),
     M :: matrix(),
@@ -98,7 +93,7 @@ row(I, M) ->
     [lists:nth(I, M)].
 
 
-%% get the column J of M
+%% return the column J of M
 -spec col(J, M) -> Col when
     J :: pos_integer(),
     M :: matrix(),
@@ -108,7 +103,7 @@ col(J, M) ->
     [[lists:nth(J, Row)] || Row <- M].
 
 
-%% get the element a index (I,J) in M
+%% return the element at index (I,J) in M
 -spec get(I, J, M) -> Elem when
     I :: pos_integer(),
     J :: pos_integer(),
@@ -119,7 +114,7 @@ get(I, J, M) ->
     lists:nth(J, lists:nth(I, M)).
 
 
-%% build a null matrix of size NxM
+%% return a null matrix of size NxM
 -spec zeros(N, M) -> Zeros when
     N :: pos_integer(),
     M :: pos_integer(),
@@ -129,7 +124,7 @@ zeros(N, M) ->
     [[0 || _ <- lists:seq(1, M)] || _ <- lists:seq(1, N)].
 
 
-%% build an identity matrix of size NxN
+%% return an identity matrix of size NxN
 -spec eye(N) -> Identity when
     N :: pos_integer(),
     Identity :: matrix().
@@ -138,6 +133,16 @@ eye(N) ->
     [[ if I =:= J -> 1; true -> 0 end
         || J <- lists:seq(1, N)]
         || I <- lists:seq(1, N)].
+
+
+%% return a square diagonal matrix with the elements of L on the main diagonal
+-spec diag(L) -> Diag when
+    L :: [number(), ...],
+    Diag :: matrix().
+
+diag(L) ->
+    N = length(L),
+    diag(L, zeros(N, N), 0, []).
 
 
 %% compute the inverse of a square matrix
@@ -165,7 +170,7 @@ eval([Res]) ->
     Res.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Private
+%% Internal functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% transpose matrix with accumulator
@@ -175,15 +180,18 @@ tr(M, Rows) ->
     {Row, Cols} = tr(M, [], []),
     tr(Cols, [Row|Rows]).
 
+
 %% transpose the first row of a matrix with accumulators
 tr([], Col, Cols) ->
     {lists:reverse(Col), lists:reverse(Cols)};
 tr([[H|T]|Rows], Col, Cols) ->
     tr(Rows, [H|Col], [T|Cols]).
 
+
 %% apply Op element wise on matrices M1 and M2
 element_wise_op(Op, M1, M2) ->
     lists:zipwith(fun(L1, L2) -> lists:zipwith(Op, L1, L2) end, M1, M2).
+
 
 %% Gauss-Jordan method from
 %% https://fr.wikipedia.org/wiki/%C3%89limination_de_Gauss-Jordan#Pseudocode
@@ -201,6 +209,7 @@ gauss_jordan(A, N, R, J) ->
             gauss_jordan(A3, N, R+1, J+1)
     end.
 
+
 %% Matrix(i, :) -= Matrix(i, j)/Pivot * Matrix(R, :) forall i\{R}
 %% Matrix(R, :) *= 1/Pivot
 %% with Pivot = Matrix(R, j)
@@ -213,6 +222,7 @@ gauss_jordan_aux([Row|Rows], {R, J}, L, I, Acc) ->
     NewRow = lists:zipwith(fun(A, B) -> A-F*B end, Row, L),
     gauss_jordan_aux(Rows, {R, J}, L, I+1, [NewRow|Acc]).
 
+
 %% find the gauss jordan pivot of a column
 pivot([], _, Pivot) ->
     Pivot;
@@ -220,6 +230,7 @@ pivot([[H]|T], I, {_, V}) when abs(H) >= abs(V) ->
     pivot(T, I+1, {I, H});
 pivot([_|T], I, Pivot) ->
     pivot(T, I+1, Pivot).
+
 
 %% swap two indexes of a list
 %% taken from https://stackoverflow.com/a/64024907
@@ -231,8 +242,11 @@ swap(A, B, List) ->
     {L2, [Elem2 | L3]} = lists:split(P2-P1-1, T1), 
     lists:append([L1, [Elem2], L2, [Elem1], L3]).
 
-list_to_matrix([], _, Acc) ->
+
+%% build a diagonal matrix from a zero matrix
+diag([], [], _, Acc) ->
     lists:reverse(Acc);
-list_to_matrix(List, M, Acc) ->
-    {Row, Rest} = lists:split(M, List),
-    list_to_matrix(Rest, M, [Row|Acc]).
+diag([X|Xs], [Row|Rows], I, Acc) ->
+    {L1, [_|T1]} = lists:split(I, Row),
+    NewRow = lists:append([L1, [X], T1]),
+    diag(Xs, Rows, I+1, [NewRow|Acc]).

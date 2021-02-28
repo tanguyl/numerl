@@ -1,11 +1,22 @@
 -module(numerl).
+-on_load(init/0).
+-export([ array_eq/2, list_to_matrix/1, get/3]).
 
--on_load(init).
+%%  Load nif.
+init()->
+    erlang:load_nif("./numerl_nif", 0).
 
 
--init_nif()->
+%%Creates a matrix.
+%List: List of doubles, of length N.
+%Return: a matrix of dimension MxN, containing the data.
+list_to_matrix(_) ->
     nif_not_loaded.
 
--init()->
-    erlang:load_nif("./numerl.c", 0),
-    init_nif().
+%%Returns a value from a matrix.
+get(_,_,_) ->
+    nif_not_loaded.
+
+%%Equality test between matrixes.
+array_eq(_, _) ->
+    nif_not_loaded.
