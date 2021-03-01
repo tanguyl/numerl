@@ -1,5 +1,6 @@
 #include <erl_nif.h>
 #include <stdio.h>
+#include <string.h>
 #include "gsl_cblas.h"
 
 
@@ -80,12 +81,33 @@ void array_print(Array a){
     printf("\n"); 
 }
 
+
+//Allocates memory space of for matrix of requested size.
+//Still requires it to get 'sent' to erlang.
+Array array_alloc_matrix(int m, int n){
+    Array matrix;
+
+    enif_alloc_binary(sizeof(double)*m*n, &matrix.content_b);
+    enif_alloc_binary(sizeof(int)*4, &matrix.info_b);
+
+    matrix.content = (double*) matrix.content_b.data;
+    matrix.info = (int*) matrix.info_b.data;
+
+    matrix.info[0] = m;
+    matrix.info[1] = n;
+    matrix.info[2] = 1;
+    matrix.info[3] = m;
+
+    return matrix;
+}
+
 ERL_NIF_TERM array_to_erl(ErlNifEnv* env, Array a){
     ERL_NIF_TERM content_t = enif_make_binary(env, &a.content_b);
     ERL_NIF_TERM info_t = enif_make_binary(env, &a.info_b);
 
     return enif_make_tuple2(env, content_t, info_t);
 }
+
 
 Array erl_to_array(ErlNifEnv* env, ERL_NIF_TERM term){
     Array array;
@@ -144,16 +166,7 @@ ERL_NIF_TERM nif_list_to_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
         if(m == -1){
             //Allocate binary, make matrix accessor.
             m = cur_m;
-            enif_alloc_binary(sizeof(double)*m*n, &matrix.content_b);
-            enif_alloc_binary(sizeof(int)*4, &matrix.info_b);
-
-            matrix.content = (double*) matrix.content_b.data;
-            matrix.info = (int*) matrix.info_b.data;
-
-            matrix.info[0] = m;
-            matrix.info[1] = n;
-            matrix.info[2] = 1;
-            matrix.info[3] = m;
+            matrix = array_alloc_matrix(m,n);
         }
 
         if(m != cur_m)
@@ -186,14 +199,55 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     return enif_make_double(env, matrix.content[index]);
 }
 
+/*
+@arg 0: int.
+@arg 1: Array.
+@return: returns an array, containing requested row.
+*/
+ERL_NIF_TERM nif_row(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
+    int row_req;
+    enif_get_int(env, argv[0], &row_req);
+    Array matrix = erl_to_array(env, argv[1]);
+
+    int row_size = array_get_dim(matrix, 0);
+    Array row = array_alloc_matrix(row_size, 1);
+
+
+    memcpy(row.content, matrix.content + (row_req * row_size), row_size*sizeof(double));
+
+    return array_to_erl(env, row);
+}
+
+
+/*
+@arg 0: int.
+@arg 1: Array.
+@return: returns an array, containing requested col.
+*/
+ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
+    int col_req;
+    enif_get_int(env, argv[0], &col_req);
+    Array matrix = erl_to_array(env, argv[1]);
+
+    int row_size = array_get_dim(matrix, 0);
+    int col_size = array_get_dim(matrix, 1);
+    Array col = array_alloc_matrix(1, col_size);
+
+    for(int i = 0; i < col_size; i++){
+        col.content[i] = matrix.content[i*row_size + col_req];
+    }
+
+    return array_to_erl(env, col);
+}
 
 //------------------------------------------------------------------------
-
 
 ErlNifFunc nif_funcs[] = {
     {"array_eq", 2, nif_array_eq},
     {"list_to_matrix", 1, nif_list_to_matrix},
-    {"get", 3, nif_get}
+    {"get", 3, nif_get},
+    {"row", 2, nif_row},
+    {"col", 2, nif_col}
 };
 
 

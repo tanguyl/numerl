@@ -32,5 +32,19 @@ equal_test() ->
     false = numerl:array_eq(CM0, CM2),
     false = numerl:array_eq(CM0, CM1).
 
+row_test() ->
+    M0 = [[1.0, 2.0], [3.0, 4.0]],
+    R0 = mat:row(2, M0),
+    CM0 = numerl:list_to_matrix(M0),
+    CR0 = numerl:list_to_matrix(R0),
+    true = numerl:array_eq(CR0, numerl:row(1, CM0)).
+
+
+col_test() ->
+    M0 = [[1.0, 2.0], [3.0, 4.0]],
+    C0 = mat:col(2, M0),
+    CM0 = numerl:list_to_matrix(M0),
+    CC0 = numerl:list_to_matrix(C0),
+    true = numerl:array_eq(CC0, numerl:col(1, CM0)).
 
 

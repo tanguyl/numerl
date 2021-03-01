@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ array_eq/2, list_to_matrix/1, get/3]).
+-export([ array_eq/2, list_to_matrix/1, get/3, row/2, col/2]).
 
 %%  Load nif.
 init()->
@@ -15,6 +15,14 @@ list_to_matrix(_) ->
 
 %%Returns a value from a matrix.
 get(_,_,_) ->
+    nif_not_loaded.
+
+%%Returns requested row.
+row(_,_) ->
+    nif_not_loaded.
+
+%%Returns requested col.
+col(_,_) ->
     nif_not_loaded.
 
 %%Equality test between matrixes.
