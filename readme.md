@@ -6,9 +6,10 @@ Basic API, aiming at giving erlang a fast matrix library. The "basic" pure erlan
 # DONE
     - list to matrix.
     - get, row, col.
+    - operator ==, +, -
 
 # API: todo
-- operators +,-,==,*,*´. 
+- operators *,*´. 
 - zeros, eye.
 - eval.
 

@@ -21,6 +21,7 @@ ERL_NIF_TERM atom_int;
 ERL_NIF_TERM atom_double;
 ERL_NIF_TERM atom_true;
 ERL_NIF_TERM atom_false;
+ERL_NIF_TERM atom_array;
 
 ErlNifResourceType *MULT_YIELDING_ARG = NULL;
 
@@ -32,6 +33,7 @@ int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
     atom_double = enif_make_atom(env, "d\0");
     atom_true = enif_make_atom(env, "true\0");
     atom_false = enif_make_atom(env, "false\0");
+    atom_array = enif_make_atom(env, "array\0");
 
     return 0;
 }
@@ -54,6 +56,8 @@ int array_get_content_size(Array a){ return a.content_b.size / sizeof(double);}
 int array_get_info_size(Array a){return a.info_b.size / sizeof(int);}
 int array_get_stride(Array a, int stride){ return a.info[stride + (array_get_info_size(a)/2)]; }
 int array_get_dim(Array a, int dimension) {return a.info[dimension];}
+int array_get_content_index(Array a, int i, int j){ return array_get_stride(a,0)*i + array_get_stride(a,1)*j;}
+double* array_get_content_at(Array a, int i, int j){ return &a.content[array_get_content_index(a,i,j)];}
 
 int array_eq(Array a, Array b){
     if((array_get_content_size(a) != array_get_content_size(b)) ||
@@ -66,6 +70,17 @@ int array_eq(Array a, Array b){
     for(int i = 0; i<array_get_info_size(a); i++)
         if(a.info[i] != b.info[i]) return 0;
         
+    return 1;
+}
+
+int array_same_dim(Array a, Array b){ 
+    if((array_get_content_size(a) != array_get_content_size(b)) ||
+        (array_get_info_size(a) != array_get_info_size(b)))
+        return 0;
+    
+     for(int i = 0; i<array_get_content_size(a); i++)
+        if(a.content[i] != b.content[i]) return 0;
+
     return 1;
 }
 
@@ -105,7 +120,7 @@ ERL_NIF_TERM array_to_erl(ErlNifEnv* env, Array a){
     ERL_NIF_TERM content_t = enif_make_binary(env, &a.content_b);
     ERL_NIF_TERM info_t = enif_make_binary(env, &a.info_b);
 
-    return enif_make_tuple2(env, content_t, info_t);
+    return enif_make_tuple3(env, atom_array, content_t, info_t);
 }
 
 
@@ -115,8 +130,8 @@ Array erl_to_array(ErlNifEnv* env, ERL_NIF_TERM term){
     const ERL_NIF_TERM* content;
 
     enif_get_tuple(env, term, &arity, &content);
-    enif_inspect_binary(env, content[0], &array.content_b);
-    enif_inspect_binary(env, content[1], &array.info_b);
+    enif_inspect_binary(env, content[1], &array.content_b);
+    enif_inspect_binary(env, content[2], &array.info_b);
     array.content = (double*) array.content_b.data;
     array.info = (int*) array.info_b.data;
 
@@ -133,6 +148,21 @@ Array erl_to_array(ErlNifEnv* env, ERL_NIF_TERM term){
 */
 
 /*
+@arg 0: int.
+@arg 1: int.
+@return: empty array of dimension [0,0]..
+*/
+ERL_NIF_TERM nif_array_zero(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    int m,n;
+    enif_get_int(env, argv[0], &m);
+    enif_get_int(env, argv[1], &n);
+
+    Array a = array_alloc_matrix(m,n);
+    memset(a.content, 0, sizeof(double)*m*n);
+    return array_to_erl(env, a);
+}
+
+/*
 @arg 0: Array.
 @arg 1: Array.
 @return: true if both array are true.
@@ -144,6 +174,56 @@ ERL_NIF_TERM nif_array_eq(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     int equal = array_eq(a,b);
 
     return equal? atom_true:atom_false;
+}
+
+/*
+@arg 0: Array.
+@arg 1: Array.
+@return Array resulting of element wise + operation.
+*/
+ERL_NIF_TERM nif_array_plus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+   
+    Array a = erl_to_array(env, argv[0]),
+            b = erl_to_array(env, argv[1]);
+    
+    if (!array_same_dim(a,b)){
+        return atom_nok;
+    }
+
+    Array result = array_alloc_matrix(array_get_dim(a,0), array_get_dim(a,1));
+    
+    for(int i = 0; i < array_get_dim(a,0); i++){
+        for(int j = 0; j < array_get_dim(a,1); j++){
+            (*array_get_content_at(result, i, j)) = (*array_get_content_at(a, i, j)) + (*array_get_content_at(b,i,j));
+        }
+    }
+
+    return array_to_erl(env, result);
+}
+
+/*
+@arg 0: Array.
+@arg 1: Array.
+@return Array resulting of element wise + operation.
+*/
+ERL_NIF_TERM nif_array_minus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+   
+    Array a = erl_to_array(env, argv[0]),
+            b = erl_to_array(env, argv[1]);
+    
+    if (!array_same_dim(a,b)){
+        return atom_nok;
+    }
+
+    Array result = array_alloc_matrix(array_get_dim(a,0), array_get_dim(a,1));
+    
+    for(int i = 0; i < array_get_dim(a,0); i++){
+        for(int j = 0; j < array_get_dim(a,1); j++){
+            (*array_get_content_at(result, i, j)) = (*array_get_content_at(a, i, j)) - (*array_get_content_at(b,i,j));
+        }
+    }
+
+    return array_to_erl(env, result);
 }
 
 /*
@@ -190,12 +270,15 @@ ERL_NIF_TERM nif_list_to_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
 ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     ErlNifBinary bin;
     int m,n;
-    enif_get_int(env, argv[0], &n);
-    enif_get_int(env, argv[1], &m);
+    enif_get_int(env, argv[0], &m);
+    enif_get_int(env, argv[1], &n);
     Array matrix = erl_to_array(env, argv[2]);
+
+    if(m < 0 || m >= array_get_dim(matrix, 0) || n < 0 || n > array_get_dim(matrix, 1))
+        return atom_nok;
     
 
-    int index = m*array_get_stride(matrix,0) + n*array_get_stride(matrix, 1);
+    int index = array_get_content_index(matrix, m, n);
     return enif_make_double(env, matrix.content[index]);
 }
 
@@ -243,7 +326,10 @@ ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 //------------------------------------------------------------------------
 
 ErlNifFunc nif_funcs[] = {
-    {"array_eq", 2, nif_array_eq},
+    {"zeros", 2, nif_array_zero},
+    {"==", 2, nif_array_eq},
+    {"+", 2, nif_array_plus},
+    {"-", 2, nif_array_minus},
     {"list_to_matrix", 1, nif_list_to_matrix},
     {"get", 3, nif_get},
     {"row", 2, nif_row},

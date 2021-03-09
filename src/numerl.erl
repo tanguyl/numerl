@@ -1,6 +1,8 @@
 -module(numerl).
 -on_load(init/0).
--export([ array_eq/2, list_to_matrix/1, get/3, row/2, col/2]).
+-export([ zeros/2, '=='/2, '+'/2, '-'/2, list_to_matrix/1, get/3, row/2, col/2]).
+
+-record(array, {content, info}).
 
 %%  Load nif.
 init()->
@@ -21,10 +23,42 @@ get(_,_,_) ->
 row(_,_) ->
     nif_not_loaded.
 
+
 %%Returns requested col.
 col(_,_) ->
     nif_not_loaded.
 
+
 %%Equality test between matrixes.
-array_eq(_, _) ->
+-spec '=='(M0, M1) -> boolean() when
+    M0 :: #array{},
+    M1 :: #array{}.
+
+'=='(_, _) ->
+    nif_not_loaded.
+
+
+%%Addition of matrix.
+-spec '+'(M1, M2) -> _ when
+    M1 :: #array{},
+    M2 :: #array{}.
+
+'+'(_, _) ->
+    nif_not_loaded.
+
+%%Substraction of matrix.
+-spec '-'(M1, M2) -> _ when
+    M1 :: #array{},
+    M2 :: #array{}.
+
+'-'(_, _) ->
+    nif_not_loaded.
+
+%% build a null matrix of size NxM
+-spec zeros(N, M) -> Zeros when
+    N :: pos_integer(),
+    M :: pos_integer(),
+    Zeros :: #array{}.
+
+zeros(N, M) ->
     nif_not_loaded.
