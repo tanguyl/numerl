@@ -163,6 +163,23 @@ ERL_NIF_TERM nif_array_zero(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 }
 
 /*
+@arg 0: int.
+@arg 1: int.
+@return: empty array of dimension [0,0]..
+*/
+ERL_NIF_TERM nif_array_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    int m;
+    enif_get_int(env, argv[0], &m);
+
+    Array a = array_alloc_matrix(m,m);
+    memset(a.content, 0, sizeof(double)*m*m);
+    for(int i = 0; i<m; i++){
+        a.content[i*m+i] = 1.0;
+    }
+    return array_to_erl(env, a);
+}
+
+/*
 @arg 0: Array.
 @arg 1: Array.
 @return: true if both array are true.
@@ -270,11 +287,11 @@ ERL_NIF_TERM nif_list_to_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM arg
 ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     ErlNifBinary bin;
     int m,n;
-    enif_get_int(env, argv[0], &m);
-    enif_get_int(env, argv[1], &n);
+    enif_get_int(env, argv[0], &n);
+    enif_get_int(env, argv[1], &m);
     Array matrix = erl_to_array(env, argv[2]);
 
-    if(m < 0 || m >= array_get_dim(matrix, 0) || n < 0 || n > array_get_dim(matrix, 1))
+    if(m < 0 || m >= array_get_dim(matrix, 1) || n < 0 || n > array_get_dim(matrix, 0))
         return atom_nok;
     
 
@@ -326,6 +343,7 @@ ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 //------------------------------------------------------------------------
 
 ErlNifFunc nif_funcs[] = {
+    {"eye", 1, nif_array_eye},
     {"zeros", 2, nif_array_zero},
     {"==", 2, nif_array_eq},
     {"+", 2, nif_array_plus},

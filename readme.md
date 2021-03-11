@@ -5,12 +5,11 @@ Basic API, aiming at giving erlang a fast matrix library. The "basic" pure erlan
 
 # DONE
     - list to matrix.
-    - get, row, col.
+    - get, row, col, zeros, eye.
     - operator ==, +, -
 
 # API: todo
 - operators *,*´. 
-- zeros, eye.
 - eval.
 
 # Notes

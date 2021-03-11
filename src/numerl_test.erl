@@ -24,7 +24,7 @@ get_test() ->
     W00 = mat:get(1, 1, M1),
     W00 = numerl:get(0, 0, CM1),
     W01 = mat:get(2, 1, M1),
-    W01 = numerl:get(2, 1, CM1).
+    W01 = numerl:get(1, 0, CM1).
 
 equal_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -75,3 +75,11 @@ zero_test() ->
     CM0 = numerl:zeros(1,5),
     G0 = float(mat:get(1, 5, M0)),
     G0 = numerl:get(0, 4, CM0).
+
+eye_test() ->
+    CM0 = numerl:eye(5),
+    M0 = numerl:get(0,0,CM0),
+    M0 = 1.0,
+    M0 = numerl:get(1,1,CM0),
+    M0 = numerl:get(2,2,CM0),
+    M0 = numerl:get(4,4,CM0).

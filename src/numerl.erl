@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ zeros/2, '=='/2, '+'/2, '-'/2, list_to_matrix/1, get/3, row/2, col/2]).
+-export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2, list_to_matrix/1, get/3, row/2, col/2]).
 
 -record(array, {content, info}).
 
@@ -60,5 +60,10 @@ col(_,_) ->
     M :: pos_integer(),
     Zeros :: #array{}.
 
+%Returns an empty matrix.
 zeros(N, M) ->
+    nif_not_loaded.
+
+%%Returns an Identity matrix NxN.
+eye(N)->
     nif_not_loaded.
