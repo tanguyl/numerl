@@ -11,6 +11,3 @@ Basic API, aiming at giving erlang a fast matrix library. The "basic" pure erlan
 # API: todo
 - operators *,*´. 
 - eval.
-
-# Notes
-Using cblas's GEMM for matrix calculation

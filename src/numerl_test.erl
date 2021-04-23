@@ -83,3 +83,16 @@ eye_test() ->
     M0 = numerl:get(1,1,CM0),
     M0 = numerl:get(2,2,CM0),
     M0 = numerl:get(4,4,CM0).
+
+mult_test() ->
+    CM0 = numerl:eye(2),
+    CM1 = numerl:list_to_matrix([[1.0, 2.0], [3.0, 4.0]]),
+    CM2 = numerl:list_to_matrix([[30.0, 36.0, 42.0], [66.0, 81.0, 96.0], [102.0, 126.0, 150.0]]),
+    CM3 = numerl:list_to_matrix([[1.0], [2.0]]),
+    CM4 = numerl:list_to_matrix([[5.0, 11.0]]),
+    CM5 = numerl:'*'(CM1, CM0),
+    numerl:print(CM5),
+    CM6 = numerl:'*'(CM1, CM4),
+    numerl:print(CM6).
+    %CM2 = numerl:'*'(CM1, CM1),
+    %CM5 = numerl:'*'(CM1, CM3).
