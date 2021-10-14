@@ -165,7 +165,7 @@ ERL_NIF_TERM nif_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 void print_array(Array a){
-    printf("Matrix [%d, %d], (n elems: %d) [", a.dimensions[0], a.dimensions[1], a.sizes[1]);
+    printf("Matrix [%d, %d] :", a.dimensions[0], a.dimensions[1]);
 
     for(int i = 0; i < a.sizes[1]; i++){
         printf("%lf ,", a.content[i]);
@@ -208,7 +208,7 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 //@arg 0: Array.
 //@arg 1: Array.
 //@return: true if arrays share content.
-ERL_NIF_TERM nif_array_eq(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM nif_eq(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Array a = erl_to_array(env, argv[0]),
             b = erl_to_array(env, argv[1]);
     
@@ -261,7 +261,7 @@ ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 //@arg 0: Array.
 //@arg 1: Array.
 //@return Array resulting of element wise + operation.
-ERL_NIF_TERM nif_array_plus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM nif_plus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
    
     Array a = erl_to_array(env, argv[0]),
             b = erl_to_array(env, argv[1]);
@@ -284,7 +284,7 @@ ERL_NIF_TERM nif_array_plus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 //@arg 0: Array.
 //@arg 1: Array.
 //@return Array resulting of element wise - operation.
-ERL_NIF_TERM nif_array_minus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM nif_minus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
    
     Array a = erl_to_array(env, argv[0]),
             b = erl_to_array(env, argv[1]);
@@ -307,7 +307,7 @@ ERL_NIF_TERM nif_array_minus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]
 //@arg 0: int.
 //@arg 1: int.
 //@return: empty array of requested dimension..
-ERL_NIF_TERM nif_array_zero(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM nif_zero(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     int m,n;
     enif_get_int(env, argv[0], &m);
     enif_get_int(env, argv[1], &n);
@@ -320,7 +320,7 @@ ERL_NIF_TERM nif_array_zero(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 //@arg 0: int.
 //@arg 1: int.
 //@return: empty array of dimension [0,0]..
-ERL_NIF_TERM nif_array_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM nif_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     int m;
     enif_get_int(env, argv[0], &m);
 
@@ -337,7 +337,7 @@ ERL_NIF_TERM nif_array_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 //@arg 0: Array.
 //@arg 1: Array.
 //@return Array resulting of multiplication.
-ERL_NIF_TERM nif_array_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM nif_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
    
     Array a = erl_to_array(env, argv[0]),
             b = erl_to_array(env, argv[1]);
@@ -362,6 +362,94 @@ ERL_NIF_TERM nif_array_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
     return array_to_erl(env, result);
 }
 
+
+//@arg0: Array.
+ERL_NIF_TERM nif_tr(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Array a = erl_to_array(env, argv[0]);
+    if(a.dimensions[N_COLS] != a.dimensions[N_ROWS]){
+        return atom_nok;
+    }
+    Array result = alloc_matrix(a.dimensions[N_COLS] ,a.dimensions[N_ROWS]);
+    int n = a.dimensions[N_COLS];
+
+    for(int i = 0; i<n; i++)
+        *matrix_at(i,i,result) = *matrix_at(i,i,a);
+
+    for(int i = 1; i < n; i++){
+        for(int j = 0; j < a.dimensions[N_ROWS]; j++){
+            *matrix_at(j,i,result) = *matrix_at(i,j,a);
+            *matrix_at(i,j,result) = *matrix_at(j,i,a);
+        }
+    }
+    return array_to_erl(env, result);
+}
+
+
+//arg0: Array.
+ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Array a = erl_to_array(env, argv[0]);
+
+    if(a.dimensions[N_COLS] != a.dimensions[N_ROWS]){
+        return atom_nok;
+    }
+    int n = a.dimensions[N_COLS];
+
+
+    //The used algorithm works 'in place'
+    Array inv = alloc_matrix(n,n);
+    memcpy(inv.content, a.content, n*n*sizeof(double));
+    
+    //Elimination de Gauss Jordan:
+    //https://fr.wikipedia.org/wiki/%C3%89limination_de_Gauss-Jordan
+    int r = -1;
+    for(int i = 0; i<n; i++){
+        
+        //Find best pivot value
+        int k = -1;
+        double pivot_value = 0;
+        for(int j=0; j<n; j++){
+            double cur_value = fabs(*matrix_at(i,j,inv));
+            if(cur_value > pivot_value){
+                k = j;
+                pivot_value = cur_value;
+            }
+        }
+
+        //Is the pivot usable?
+        if(k >= 0){
+            r++;
+
+            //Divide the line k
+            for(int l=0; l<n; l++){
+                *matrix_at(l,k, inv) /= pivot_value;
+            }
+            
+            //Swap lines k and r
+            if(k != r){
+                double cpy;
+                for(int l=0; l<n; l++){
+                    cpy = *matrix_at(l,k,inv);
+                    *matrix_at(l,k,inv) = *matrix_at(l,r,inv);
+                    *matrix_at(l,r,inv) = cpy;
+                }
+            }
+
+            for(int l=0; l<n; l++){
+                if(l != r){
+                    double factor = *matrix_at(l,i,inv);
+                    for(int elem=0; elem<n; elem++){
+                        *matrix_at(l, elem, inv) -= *matrix_at(r, elem, inv) * factor; 
+                    }
+                }
+            }
+            
+        }
+    }
+    
+
+    return array_to_erl(env, inv);
+}
+
 //------------------------------------------------------------------------
 
 ErlNifFunc nif_funcs[] = {
@@ -369,14 +457,16 @@ ErlNifFunc nif_funcs[] = {
     {"matrix", 1, nif_matrix},
     {"print", 1, nif_matrix_print},
     {"get", 3, nif_get},
-    {"==", 2, nif_array_eq},
+    {"==", 2, nif_eq},
     {"row", 2, nif_row},
     {"col", 2, nif_col},
-    {"+", 2, nif_array_plus},
-    {"-", 2, nif_array_minus},
-    {"zeros", 2, nif_array_zero},
-    {"eye", 1, nif_array_eye},
-    {"*", 2, nif_array_mult},
+    {"+", 2, nif_plus},
+    {"-", 2, nif_minus},
+    {"zeros", 2, nif_zero},
+    {"eye", 1, nif_eye},
+    {"*", 2, nif_mult},
+    {"tr", 1, nif_tr},
+    {"inv", 1, nif_inv}
     
 };
 
