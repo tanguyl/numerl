@@ -6,8 +6,9 @@ matrix_test() ->
     _ = numerl:matrix(M0).
 
 print_test() ->
-    M0 = numerl:matrix([[1.0, 0.0], [0.0, 1.0]]),
+    M0 = numerl:matrix([[1.0/3.0, 0.0], [0.0, 1.0/3.0]]),
     numerl:print(M0).
+
 
 get_test() ->
     %Testing access on square matrix
@@ -45,18 +46,18 @@ equal_test() ->
     CM0 = numerl:matrix(M0),
     CM1 = numerl:matrix(M1),
     CM2 = numerl:matrix(M2),
-    true = CM1 == CM1,
-    true = CM0 == CM0,
-    false = CM1 == CM2,
-    false = CM0 == CM2,
-    false = CM0 == CM1.
+    true = numerl:'=='(CM1, CM1),
+    true = numerl:'=='(CM0, CM0),
+    false = numerl:'=='(CM1, CM2),
+    false = numerl:'=='(CM0, CM2),
+    false = numerl:'=='(CM0, CM1).
 
 row_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
     R0 = mat:row(2, M0),
     CM0 = numerl:matrix(M0),
     CR0 = numerl:matrix(R0),
-    true = CR0 == numerl:row(2, CM0).
+    true = numerl:'=='(CR0, numerl:row(2, CM0)).
 
 
 col_test() ->
@@ -64,7 +65,7 @@ col_test() ->
     C0 = mat:col(2, M0),
     CM0 = numerl:matrix(M0),
     CC0 = numerl:matrix(C0),
-    true = CC0 == numerl:col(1, CM0).
+    true = numerl:'=='(CC0, numerl:col(1, CM0)).
 
 plus_test()->
      M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -72,7 +73,7 @@ plus_test()->
      CM0 = numerl:matrix(M0),
      CM1 = numerl:matrix(M1),
      CM0p = numerl:'+'(CM0, CM0),
-     true = CM1 == CM0p.
+     true = numerl:'=='(CM1, CM0p).
 
 minus_test()->
      M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -80,7 +81,7 @@ minus_test()->
      CM0 = numerl:matrix(M0),
      CM1 = numerl:matrix(M1),
      CM0p = numerl:'-'(CM0, CM0),
-     true = CM1 == CM0p.
+     true = numerl:'=='(CM1, CM0p).
 
 zero_test() ->
     M0 = mat:zeros(1,5),
@@ -117,9 +118,8 @@ tr_test() ->
 
 inv_test() ->
     M = numerl:matrix([[2.0, -1.0, 0.0], [-1.0, 2.0, -1.0], [0.0, -1.0, 2.0]]),
-    M_Expected = numerl:eye(3),
     M_inv = numerl:inv(M),
-    numerl:print(M_inv),
-    M_inv = M_Expected.
+    io:fwrite(numerl:print(M_inv),[]),
+    true = numerl:'=='(numerl:'*'(M, M_inv), numerl:eye(3)).
 
 
