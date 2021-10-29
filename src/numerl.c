@@ -95,6 +95,11 @@ Matrix alloc_matrix(int n_rows, int n_cols){
     return m;
 }
 
+//Free an allocated matrix that was not sent back to Erlang.
+void free_matrix(Matrix m){
+    enif_release_binary(&m.bin);
+}
+
 //Constructs a matrix erlang term.
 //No modifications can be made afterwards to the matrix.
 ERL_NIF_TERM matrix_to_erl(ErlNifEnv* env, Matrix m){
@@ -367,6 +372,16 @@ ERL_NIF_TERM nif_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 
+Matrix tr(Matrix a){
+    Matrix result = alloc_matrix(a.n_cols ,a.n_rows);
+
+    for(int i = 0; i < a.n_cols; i++){
+        for(int j = 0; j < a.n_rows; j++){
+            *matrix_at(j,i,result) = *matrix_at(i,j,a);
+        }
+    }
+    return result;
+}
 
 //@arg 0: Matrix.
 //@arg 1: Matrix.
@@ -384,14 +399,19 @@ ERL_NIF_TERM nif_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     Matrix result = alloc_matrix(n_rows, n_cols);
     memset(result.content, 0.0, n_rows*n_cols * sizeof(double));
+
+    //Will this create a mem leak?
+    Matrix b_tr = tr(b); 
     
     for(int i = 0; i < n_rows; i++){
         for(int j = 0; j < n_cols; j++){
            for(int k = 0; k<a.n_cols; k++){
-                *matrix_at(j,i,result) += (*matrix_at(k, i, a)) * (*matrix_at(j, k, b));
+               result.content[j+i*result.n_cols] += a.content[k+i*a.n_cols] * b_tr.content[k+j*b_tr.n_cols];
            }
         }
     }
+
+    free_matrix(b_tr);
 
     return matrix_to_erl(env, result);
 }
@@ -400,22 +420,7 @@ ERL_NIF_TERM nif_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 //@arg0: Matrix.
 ERL_NIF_TERM nif_tr(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix a = erl_to_matrix(env, argv[0]);
-    if(a.n_cols != a.n_rows){
-        return atom_nok;
-    }
-    Matrix result = alloc_matrix(a.n_cols ,a.n_rows);
-    int n = a.n_cols;
-
-    for(int i = 0; i<n; i++)
-        *matrix_at(i,i,result) = *matrix_at(i,i,a);
-
-    for(int i = 1; i < n; i++){
-        for(int j = 0; j < a.n_rows; j++){
-            *matrix_at(j,i,result) = *matrix_at(i,j,a);
-            *matrix_at(i,j,result) = *matrix_at(j,i,a);
-        }
-    }
-    return matrix_to_erl(env, result);
+    return matrix_to_erl(env, tr(a));
 }
 
 

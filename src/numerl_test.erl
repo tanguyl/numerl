@@ -100,7 +100,6 @@ eye_test() ->
 mult_test() ->
     CM0 = numerl:eye(2),
     CM1 = numerl:matrix([[1.0, 2.0], [3.0, 4.0]]),
-    %CM2 = numerl:matrix([[30.0, 36.0, 42.0], [66.0, 81.0, 96.0], [102.0, 126.0, 150.0]]),
     CM3 = numerl:matrix([[1.0], [2.0]]),
     CM5 = numerl:matrix([[5.0], [11.0]]),
     CM4 = numerl:matrix([[1.0, 2.0]]),
@@ -114,6 +113,8 @@ tr_test() ->
     CM0 = numerl:tr(CM0),
     CM1 = numerl:matrix([[1.0, 2.0],[3.0, 4.0]]),
     CM2 = numerl:matrix([[1.0, 3.0], [2.0, 4.0]]),
+    CM3 = numerl:matrix([[1.0, 2.0]]),
+    true = numerl:'=='(CM3, numerl:tr(numerl:matrix([[1.0], [2.0]]))),
     CM1 = numerl:tr(CM2).
 
 inv_test() ->

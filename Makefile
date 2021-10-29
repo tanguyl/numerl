@@ -3,7 +3,7 @@
 # Template of for compiling erlang files                              #
 #######################################################################
 # code to compile
-SOURCE = numerl.erl mat.erl numerl_test.erl
+SOURCE = numerl.erl mat.erl numerl_test.erl benchmark.erl
 NIF_SOURCE = numerl.c
 #TESTS = numerl_tests.erl
 
