@@ -13,28 +13,18 @@
 ----------------------------------------------------------------------------------------------------|
 */
 
-
-ERL_NIF_TERM atom_ok;
 ERL_NIF_TERM atom_nok;
-ERL_NIF_TERM atom_vector;
-ERL_NIF_TERM atom_int;
-ERL_NIF_TERM atom_double;
 ERL_NIF_TERM atom_true;
 ERL_NIF_TERM atom_false;
-ERL_NIF_TERM atom_array;
+ERL_NIF_TERM atom_matrix;
 
 ErlNifResourceType *MULT_YIELDING_ARG = NULL;
 
 int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
-    atom_ok = enif_make_atom(env, "ok\0");
-    atom_nok = enif_make_atom(env, "nok");
-    atom_vector = enif_make_atom(env, "vector\0");
-    atom_int = enif_make_atom(env, "i\0");
-    atom_double = enif_make_atom(env, "d\0");
+    atom_nok = enif_make_atom(env, "nok\0");
     atom_true = enif_make_atom(env, "true\0");
     atom_false = enif_make_atom(env, "false\0");
-    atom_array = enif_make_atom(env, "array\0");
-
+    atom_matrix = enif_make_atom(env, "matrix\0");
     return 0;
 }
 
@@ -104,7 +94,7 @@ void free_matrix(Matrix m){
 //No modifications can be made afterwards to the matrix.
 ERL_NIF_TERM matrix_to_erl(ErlNifEnv* env, Matrix m){
     ERL_NIF_TERM term = enif_make_binary(env, &m.bin);
-    return enif_make_tuple2(env, atom_array, term);
+    return enif_make_tuple4(env, atom_matrix, enif_make_int(env,m.n_rows), enif_make_int(env,m.n_cols), term);
 }
 
 
@@ -116,7 +106,7 @@ Matrix erl_to_matrix(ErlNifEnv* env, ERL_NIF_TERM term){
     const ERL_NIF_TERM* content;
 
     enif_get_tuple(env, term, &arity, &content);
-    enif_inspect_binary(env, content[1], &m.bin);
+    enif_inspect_binary(env, content[3], &m.bin);
 
     //Reading
     int* sizes = (int*) m.bin.data;

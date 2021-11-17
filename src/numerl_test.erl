@@ -104,9 +104,9 @@ mult_test() ->
     CM5 = numerl:matrix([[5.0], [11.0]]),
     CM4 = numerl:matrix([[1.0, 2.0]]),
     CM6 = numerl:matrix([[7.0, 10.0]]),
-    CM1 = numerl:'*'(CM1, CM0),
-    CM5 = numerl:'*'(CM1, CM3),
-    CM6  = numerl:'*'(CM4, CM1).
+    true = numerl:'=='(CM1, numerl:'*'(CM1, CM0)),
+    true = numerl:'=='(CM5, numerl:'*'(CM1, CM3)),
+    true = numerl:'=='(CM6 ,numerl:'*'(CM4, CM1)).
 
 tr_test() ->
     CM0 = numerl:eye(2),

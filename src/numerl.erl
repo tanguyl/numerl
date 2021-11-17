@@ -2,7 +2,7 @@
 -on_load(init/0).
 -export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1]).
 
--record(array, {content, info}).
+-record(matrix, {n_rows, n_cols, info}).
 
 %%  Load nif.
 init()->
@@ -31,44 +31,43 @@ col(_,_) ->
 
 %%Equality test between matrixes.
 -spec '=='(M0, M1) -> boolean() when
-    M0 :: #array{},
-    M1 :: #array{}.
+    M0 :: #matrix{},
+    M1 :: #matrix{}.
 
 '=='(_, _) ->
     nif_not_loaded.
 
 
 %%Addition of matrix.
--spec '+'(M1, M2) -> _ when
-    M1 :: #array{},
-    M2 :: #array{}.
+-spec '+'(M1, M2) -> #matrix{} when
+    M1 :: #matrix{},
+    M2 :: #matrix{}.
 
-'+'(_, _) ->
+'+'(#matrix{n_rows=N_ROWS, n_cols=N_COLS}, #matrix{n_rows=N_ROWS, n_cols=N_COLS}) ->
     nif_not_loaded.
 
-%%Substraction of matrix.
--spec '-'(M1, M2) -> _ when
-    M1 :: #array{},
-    M2 :: #array{}.
 
-'-'(_, _) ->
+%%Substraction of matrix.
+-spec '-'(M1, M2) -> #matrix{} when
+    M1 :: #matrix{},
+    M2 :: #matrix{}.
+
+'-'(#matrix{n_rows=N_ROWS, n_cols=N_COLS}, #matrix{n_rows=N_ROWS, n_cols=N_COLS}) ->
+    nif_not_loaded.
+
+
+
+%% Matrix multiplication.
+-spec '*'(M1, M2) -> #matrix{} when
+    M1 :: #matrix{},
+    M2 :: #matrix{}.
+
+'*'(#matrix{n_cols=N}, #matrix{n_rows=N})->
     nif_not_loaded.
 
 %% build a null matrix of size NxM
--spec zeros(N, M) -> Zeros when
-    N :: pos_integer(),
-    M :: pos_integer(),
-    Zeros :: #array{}.
+-spec zeros(pos_integer(), pos_integer()) -> #matrix{}.
 
-%% Matrix multiplication.
--spec '*'(M1, M2) -> _ when
-    M1 :: #array{},
-    M2 :: #array{}.
-
-'*'(_, _)->
-    nif_not_loaded.
-
-%Returns an empty matrix.
 zeros(_, _) ->
     nif_not_loaded.
 
