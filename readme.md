@@ -1,13 +1,9 @@
-# NUMERL: v0
+# NUMERL
 
-Basic API, aiming at giving erlang a fast matrix library. The "basic" pure erlang implementation is located in mat.erl
+Numerical Erlang is a small API for matrix operations in Erlang. This is a master thesis done at the UCLouvain.
 
 
-# DONE
+# Functions implemented
     - list to matrix.
     - get, row, col, zeros, eye.
-    - operator ==, +, -
-
-# API: todo
-- operators *,*´. 
-- eval.
+    - operator ==, +, -, *
