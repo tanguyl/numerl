@@ -97,7 +97,13 @@ eye_test() ->
     M0 = numerl:get(2,2,CM0),
     M0 = numerl:get(4,4,CM0).
 
-mult_test() ->
+mult_num_test()->
+    M0 = numerl:matrix([[1.0, 2.0]]),
+    true = numerl:'=='(numerl:matrix([[2,4]]), numerl:'*'(2, M0)),
+    true = numerl:'=='(numerl:matrix([[0,0]]), numerl:'*'(0, M0)),
+    true = numerl:'=='(numerl:matrix([[-1, -2]]), numerl:'*'(-1, M0)).
+
+mult_matrix_test() ->
     CM0 = numerl:eye(2),
     CM1 = numerl:matrix([[1.0, 2.0], [3.0, 4.0]]),
     CM3 = numerl:matrix([[1.0], [2.0]]),

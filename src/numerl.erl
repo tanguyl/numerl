@@ -58,11 +58,13 @@ col(_,_) ->
 
 
 %% Matrix multiplication.
--spec '*'(M1, M2) -> #matrix{} when
-    M1 :: #matrix{},
-    M2 :: #matrix{}.
+'*'(A,B) when is_number(A) -> '*_num'(A,B);
+'*'(A,B) -> '*_matrix'(A,B).
 
-'*'(#matrix{n_cols=N}, #matrix{n_rows=N})->
+'*_num'(_,_)->
+    nif_not_loaded.
+
+'*_matrix'(#matrix{n_cols=N}, #matrix{n_rows=N})->
     nif_not_loaded.
 
 %% build a null matrix of size NxM

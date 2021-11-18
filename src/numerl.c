@@ -67,22 +67,17 @@ double* matrix_at(int col, int row, Matrix m){
 //The matrix_content can be modified, until a call to array_to_erl.
 //Matrix content is stored in row major format.
 Matrix alloc_matrix(int n_rows, int n_cols){
-    ErlNifBinary matrix;
+    ErlNifBinary bin;
 
-    int content_size = n_rows*n_cols;
-    enif_alloc_binary(sizeof(double)*content_size + sizeof(int)*2, &matrix);
+    enif_alloc_binary(sizeof(double)*n_rows*n_cols, &bin);
 
-    int* sizes = (int*) matrix.data;
-    sizes[0] = n_rows;
-    sizes[1] = n_cols;
+    Matrix matrix;
+    matrix.n_cols = n_cols;
+    matrix.n_rows = n_rows;
+    matrix.bin = bin;
+    matrix.content = (double*) bin.data;
 
-    Matrix m;
-    m.n_cols = n_cols;
-    m.n_rows = n_rows;
-    m.bin = matrix;
-    m.content = (double*) (matrix.data + 2*sizeof(int));
-
-    return m;
+    return matrix;
 }
 
 //Free an allocated matrix that was not sent back to Erlang.
@@ -106,13 +101,11 @@ Matrix erl_to_matrix(ErlNifEnv* env, ERL_NIF_TERM term){
     const ERL_NIF_TERM* content;
 
     enif_get_tuple(env, term, &arity, &content);
+    enif_get_int(env, content[1], &m.n_rows);
+    enif_get_int(env, content[2], &m.n_cols);
     enif_inspect_binary(env, content[3], &m.bin);
+    m.content = (double*) (m.bin.data);
 
-    //Reading
-    int* sizes = (int*) m.bin.data;
-    m.n_rows = sizes[0];
-    m.n_cols = sizes[1];
-    m.content = (double*) (m.bin.data + sizeof(int)* 2);
     
     return m;
 }
@@ -373,10 +366,31 @@ Matrix tr(Matrix a){
     return result;
 }
 
+//arg 0: double or int
+//arg 1: Matrix
+//@return the result of multiplying each matrix element by arg 0.
+ERL_NIF_TERM nif_mult_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    double a;
+    if(!enif_get_double(env, argv[0], &a)){
+        int aa;
+        enif_get_int(env, argv[0], &aa);
+        a = (double) aa;
+    }
+
+    Matrix b = erl_to_matrix(env, argv[1]);
+    Matrix c = alloc_matrix(b.n_rows, b.n_cols);
+
+    for(int i = 0; i<b.n_cols*b.n_rows; i++){
+        c.content[i] = a * b.content[i];
+    }
+
+    return matrix_to_erl(env, c);
+}
+
 //@arg 0: Matrix.
 //@arg 1: Matrix.
 //@return Matrix resulting of multiplication.
-ERL_NIF_TERM nif_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+ERL_NIF_TERM _nif_mult_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
    
     Matrix a = erl_to_matrix(env, argv[0]),
             b = erl_to_matrix(env, argv[1]);
@@ -502,7 +516,8 @@ ErlNifFunc nif_funcs[] = {
     {"-", 2, nif_minus},
     {"zeros", 2, nif_zero},
     {"eye", 1, nif_eye},
-    {"*", 2, nif_mult},
+    {"*_matrix", 2, _nif_mult_matrix},
+    {"*_num", 2, nif_mult_num},
     {"tr", 1, nif_tr},
     {"inv", 1, nif_inv}
 };
