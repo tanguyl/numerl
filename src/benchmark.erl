@@ -71,6 +71,13 @@ cmp_fct_2(Size, Name, Mat_fct, Num_fct)->
     T_n = bench(Num_fct, [M_n, M_n2]),
     show_results(Name, T_e, T_n).
 
+%Test how long does it takes to create a matrix
+bench_matrix(Size)->
+    M_e = rnd_matrix(Size),
+    T_n = bench(fun numerl:matrix/1, [M_e]),
+    show_results(matrix, 0.0, T_n).
+
+%Compare performances for all benchmarks.
 run()->
     Size=1,
     io:format("Input size set to ~B~n", [Size]),
