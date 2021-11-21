@@ -65,7 +65,7 @@ col_test() ->
     C0 = mat:col(2, M0),
     CM0 = numerl:matrix(M0),
     CC0 = numerl:matrix(C0),
-    true = numerl:'=='(CC0, numerl:col(1, CM0)).
+    true = numerl:'=='(CC0, numerl:col(2, CM0)).
 
 plus_test()->
      M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -76,8 +76,8 @@ plus_test()->
      true = numerl:'=='(CM1, CM0p).
 
 minus_test()->
-     M0 = [[1.0, 2.0], [3.0, 4.0]],
-     M1 = [[0.0, 0.0], [0.0, 0.0]],
+     M0 = [[1, 2], [3, 4]],
+     M1 = [[0, 0], [0, 0]],
      CM0 = numerl:matrix(M0),
      CM1 = numerl:matrix(M1),
      CM0p = numerl:'-'(CM0, CM0),
