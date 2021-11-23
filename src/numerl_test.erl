@@ -114,6 +114,14 @@ mult_matrix_test() ->
     true = numerl:'=='(CM5, numerl:'*'(CM1, CM3)),
     true = numerl:'=='(CM6 ,numerl:'*'(CM4, CM1)).
 
+mult_matrix_num_test() ->
+    M0 = [[1.0, 2.0, 3.0]],
+    CR0 = numerl:matrix(mat:'*'(2.0, M0)),
+    CR = numerl:'*'(2.0, numerl:matrix(M0)),
+    true = numerl:'=='(CR0, CR).
+
+
+
 tr_test() ->
     CM0 = numerl:eye(2),
     CM0 = numerl:tr(CM0),

@@ -3,8 +3,6 @@
 #include <string.h>
 #include <math.h>
 
-
-
 /*
 ----------------------------------------------------------------------------------------------------|
                         ------------------------------------------                                  |
@@ -12,6 +10,7 @@
                         ------------------------------------------                                  |
 ----------------------------------------------------------------------------------------------------|
 */
+
 
 ERL_NIF_TERM atom_nok;
 ERL_NIF_TERM atom_true;
@@ -31,21 +30,6 @@ int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
 int upgrade(ErlNifEnv* caller_env, void** priv_data, void** old_priv_data, ERL_NIF_TERM load_info){
 
 }
-
-ERL_NIF_TERM make_error(ErlNifEnv* env, char* sender, char* msg){
-    /*
-    char error[] = "ERROR from ";
-    char* total = enif_alloc(sizeof(char) * (strlen(error) + strlen(sender) + strlen(msg)+3));
-    strcpy(total, error);
-    strcat(total, sender);
-    strcat(total, ": ");
-    strcat(total, msg);
-    ERL_NIF_TERM total_atom = enif_make_atom(env, total);
-    enif_free(total);
-    */
-    return enif_make_badarg(env);
-}
-
 
 //Gives easier access to an ErlangBinary containing a matrix.
 typedef struct{
@@ -128,7 +112,11 @@ int equal_ad(double* a, double* b, int size){
     return 1;
 }
 
-
+//Used to translate at once a number of ERL_NIF_TERM.
+//Data types are infered via content of format string:
+//  n: number (int or double) translated to double.
+//  m: matrix
+//  i: int
 int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, ...){
     va_list valist;
     va_start(valist, format);
@@ -158,6 +146,7 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
                 break;
             
             default:
+                //Unknown type... give an error.
                 valid = 0;
                 break;
         }
@@ -171,7 +160,7 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
 
 //----------------------------------------------------------------------------------------------------|
 //                        ------------------------------------------                                  |
-//                        |               Actual NIFS              |                                  |
+//                        |                   NIFS                 |                                  |
 //                        ------------------------------------------                                  |
 //----------------------------------------------------------------------------------------------------|
 
@@ -266,11 +255,9 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     if(!enif_get(env, argv, "iim", &m, &n, &matrix))
         return enif_make_badarg(env);
     m--, n--;
-    
 
     if(m < 0 || m >= matrix.n_rows || n < 0 || n >= matrix.n_cols)
         return enif_make_badarg(env);
-    
 
     int index = m*matrix.n_cols+n;
     return enif_make_double(env, matrix.content[index]);
@@ -425,9 +412,9 @@ ERL_NIF_TERM nif_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 Matrix tr(Matrix a){
     Matrix result = alloc_matrix(a.n_cols ,a.n_rows);
 
-    for(int i = 0; i < a.n_cols; i++){
-        for(int j = 0; j < a.n_rows; j++){
-            *matrix_at(j,i,result) = *matrix_at(i,j,a);
+    for(int j = 0; j < a.n_rows; j++){
+        for(int i = 0; i < a.n_cols; i++){
+            result.content[i*result.n_cols+j] = a.content[j*a.n_cols+i];
         }
     }
     return result;
@@ -577,6 +564,7 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 //------------------------------------------------------------------------
 
+
 ErlNifFunc nif_funcs[] = {
     
     {"matrix", 1, nif_matrix},
@@ -594,6 +582,5 @@ ErlNifFunc nif_funcs[] = {
     {"tr", 1, nif_tr},
     {"inv", 1, nif_inv}
 };
-
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, NULL, NULL)

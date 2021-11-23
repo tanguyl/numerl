@@ -19,7 +19,7 @@ bench(F ,Args ,N) ->
 
 %Run the function F a number of times.
 bench(F, Args)->
-    bench(F, Args, 200).
+    bench(F, Args, 5000).
 
 
 %Creates a random matrix of size NxN
@@ -78,8 +78,7 @@ bench_matrix(Size)->
     show_results(matrix, 0.0, T_n).
 
 %Compare performances for all benchmarks.
-run()->
-    Size=1,
+run(Size)->
     io:format("Input size set to ~B~n", [Size]),
     cmp_fct_1i(Size, eye, fun mat:eye/1, fun numerl:eye/1),
     cmp_fct_1(Size, inversion, fun mat:inv/1, fun numerl:inv/1),
