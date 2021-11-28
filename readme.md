@@ -8,6 +8,12 @@ Numerical Erlang is a small API for matrix operations in Erlang. This is a maste
     - get, row, col, zeros, eye.
     - operator ==, +, -, *
 
-# Next step
+# BLAS
 
-Addition of a BLAS wrapper is on the way.
+Support for the following BLAS function was added:
+ddot
+daxpy
+dgemv
+dtrsv
+dgemm
+dtrsm
