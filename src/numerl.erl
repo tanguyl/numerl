@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/2]).
+-export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dtrsv/4, dgemm/5]).
 
 -record(matrix, {n_rows, n_cols, info}).
 
@@ -92,6 +92,22 @@ inv(_)->
 %------CBLAS--------
 
 %ddot: dot product of two vectors
-%
-ddot(_,_)->
+%Vectors are matrices with one of their dimension set to 1.
+ddot(_,_, _)->
+    nif_not_loaded.
+
+%daxpy
+daxpy(_,_,_,_)->
+    nif_not_loaded.
+
+%dgemv
+dgemv(_,_,_,_,_)->
+    nif_not_loaded.
+
+%dtrsv
+dtrsv(_,_,_,_)->
+    nif_not_loaded.
+
+%dgemm
+dgemm(_,_,_,_,_)->
     nif_not_loaded.

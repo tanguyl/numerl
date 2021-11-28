@@ -571,29 +571,134 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 
 //Performs blas_ddot
-//Input: two matrices (containing either one row or one column), of 
-//same dimension > 1.
+//Input: two vectors (matrices containing either one row or one column).
 ERL_NIF_TERM nif_ddot(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix x,y;
-    double result;
+    int n;
 
-    if(!enif_get(env, argv, "mm", &x, &y)){
+    if(!enif_get(env, argv, "imm", &n, &x, &y)){
         return enif_make_badarg(env);
     }
 
-    int n = fmin(fmax(x.n_rows, x.n_cols), fmax(y.n_cols, y.n_rows));
+    if(fmin(x.n_rows, x.n_cols) * fmin(y.n_rows, y.n_cols) != 1){
+        //We are not using vectors...
+        return enif_make_badarg(env);
+    }
+
+    double result = cblas_ddot(n, x.content, 1, y.content, 1);
+
+    return enif_make_double(env, result);
+}
+
+
+//Performs blas_daxpy
+//Input: a number, vectors X and Y
+//Output: a vector of same dimension then Y, containing alpha X + Y
+//------------------------------------------------------------------------
+ERL_NIF_TERM nif_daxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix x,y;
+    int n;
+    double alpha;
+
+    if(!enif_get(env, argv, "inmm", &n, &alpha, &x, &y)){
+        return enif_make_badarg(env);
+    }
     
     if(fmin(x.n_rows, x.n_cols) * fmin(y.n_rows, y.n_cols) != 1){
         //We are not using vectors...
         return enif_make_badarg(env);
     }
 
-    result = cblas_ddot(n, x.content, 1, y.content, 1);
-    
-    return enif_make_double(env, result);
+    Matrix ny = alloc_matrix(y.n_rows, y.n_cols);
+    memcpy(ny.content, y.content, ny.bin.size);
+
+    cblas_daxpy(n, alpha, x.content, 1, ny.content, 1);
+
+    return matrix_to_erl(env, ny);
 }
 
-//------------------------------------------------------------------------
+// Arguments: alpha, A, x, beta, y
+// Performs alpha*A*x + beta*y.
+// alpha, beta are numbers
+// A, x, y are matrices (x and y being vectors)
+// x and y are expected to have a length of A.n_cols
+ERL_NIF_TERM nif_dgemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix A,x,y;
+    double alpha, beta;
+
+    if(!enif_get(env, argv, "nmmnm", &alpha, &A, &x, &beta, &y)){
+        enif_make_badarg(env);
+    }
+
+    //Check dimensions compatibility
+    int vec_length = fmin(fmax(x.n_cols, x.n_rows), fmax(y.n_cols, y.n_rows));
+    if(vec_length < A.n_cols || fmin(x.n_cols, x.n_rows) != 1 || fmin(y.n_cols, y.n_rows) != 1){
+        enif_make_badarg(env);
+    }
+
+    Matrix ny = alloc_matrix(y.n_rows, y.n_cols);
+    memcpy(ny.content, y.content, ny.bin.size);
+
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, A.n_rows, A.n_cols, alpha, A.content, A.n_rows, x.content, 1,  beta, ny.content, 1);
+
+    return matrix_to_erl(env, ny);
+}
+
+
+//Arguments: int upper, int diagu, matrix A, vector x.
+//upper: use A as an upper or lower matrix?
+//diagu: consider the diagonal of A is made of 1s?
+//A: matrix A.
+//x: vector x.
+//Returns the vector inv(A)*x. if A is square, x of compatible dimensions.
+ERL_NIF_TERM nif_dtrsv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix A,x;
+    int upper;      //Matrix is either upper or lower
+    int diagu;      //If diag unit: consider diag is unit. Otherwise, use value present.
+
+    if(!enif_get(env, argv, "iimm", &upper, &diagu, &A, &x)
+            || A.n_rows != A.n_cols 
+            || fmax(x.n_cols, x.n_rows) < A.n_rows){
+
+        return enif_make_badarg(env);
+    }
+
+    Matrix nx = alloc_matrix(x.n_rows, x.n_cols);
+    memcpy(nx.content, x.content, nx.bin.size);
+
+    cblas_dtrsv(CblasRowMajor,
+        upper?CblasUpper:CblasLower,
+        CblasNoTrans,
+        diagu?CblasUnit:CblasNonUnit,
+        A.n_rows, A.content, A.n_rows, nx.content, 1);
+
+    return matrix_to_erl(env, nx);
+}
+
+//Arguments: double alpha, matrix A, matrix B, double beta, matrix C
+ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix A, B, C;
+    double alpha;
+    double beta;
+
+    if(!enif_get(env, argv, "nmmnm", &alpha, &A, &B, &beta, &C)
+            || A.n_rows != C.n_rows 
+            || B.n_cols != C.n_cols 
+            || A.n_cols != B.n_rows){
+
+        return enif_make_badarg(env);
+    }
+
+    Matrix nC = alloc_matrix(C.n_rows, C.n_cols);
+    memcpy(nC.content, C.content, nC.bin.size);
+
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+    A.n_rows, B.n_cols, A.n_cols,
+    alpha, A.content, A.n_cols, B.content, B.n_rows, 
+    beta, nC.content, nC.n_cols);
+
+    return matrix_to_erl(env, nC);
+}
 
 
 ErlNifFunc nif_funcs[] = {
@@ -614,7 +719,11 @@ ErlNifFunc nif_funcs[] = {
     {"inv", 1, nif_inv},
     
     //--- BLAS
-    {"ddot", 2, nif_ddot} 
+    {"ddot", 3, nif_ddot},
+    {"daxpy", 4, nif_daxpy},
+    {"dgemv", 5, nif_dgemv},
+    {"dtrsv", 4, nif_dtrsv},
+    {"dgemm", 5, nif_dgemm}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, NULL, NULL)

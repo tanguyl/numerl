@@ -140,8 +140,29 @@ inv_test() ->
 ddot_test() ->
     Incs = numerl:matrix([[1, 2, 3, 4]]),
     Ones = numerl:matrix([[1], [1], [1], [1]]),
-    10.0 = numerl:ddot(Incs, Ones),
-    30.0 = numerl:ddot(Incs, Incs),
-    4.0 = numerl:ddot(Ones, Ones).
+    10.0 = numerl:ddot(4, Incs, Ones),
+    30.0 = numerl:ddot(4, Incs, Incs),
+    4.0 = numerl:ddot(4, Ones, Ones),
+    1.0 = numerl:ddot(1, Incs, Ones).
 
+daxpy_test()->
+    Ones = numerl:matrix([[1, 1, 1, 1]]),
+    Incs = numerl:matrix([[1, 2, 3, 4]]),
+    true = numerl:'=='(numerl:matrix([[3, 4, 5, 6]]), numerl:daxpy(4, 2, Ones, Incs)).
 
+dgemv_test()->
+    V10 = numerl:matrix([[1,2]]),
+    V01 = numerl:matrix([[0], [1]]),
+    M = numerl:matrix([[1,2],[3,4]]),
+    true = numerl:'=='(numerl:matrix([[10],[26]]), numerl:dgemv(2,M,V10, 4, V01)).
+
+dtrsv_test()->
+    M = numerl:matrix([[2,3], [0, 4]]),
+    V = numerl:matrix([[8,8]]),
+    true = numerl:'=='(numerl:matrix([[1,2]]), numerl:dtrsv(1,0, M, V)).
+
+dgemm_test()->
+    A = numerl:matrix([[1,2]]),
+    B = numerl:matrix([[3,4], [5,6]]),
+    C = numerl:matrix([[10, 12]]),
+    true = numerl:'=='(numerl:matrix([[31, 38]]), numerl:dgemm(2,A,B,0.5,C)).
