@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <gsl/gsl_cblas.h>
 
 /*
 ----------------------------------------------------------------------------------------------------|
@@ -561,6 +562,36 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     return matrix_to_erl(env, inv);
 }
 
+//----------------------------------------------------------------------------------------------------|
+//                        ------------------------------------------                                  |
+//                        |                   CBLAS                |                                  |
+//                        ------------------------------------------                                  |
+//----------------------------------------------------------------------------------------------------|
+//Some CBLAS wrappers.
+
+
+//Performs blas_ddot
+//Input: two matrices (containing either one row or one column), of 
+//same dimension > 1.
+ERL_NIF_TERM nif_ddot(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix x,y;
+    double result;
+
+    if(!enif_get(env, argv, "mm", &x, &y)){
+        return enif_make_badarg(env);
+    }
+
+    int n = fmin(fmax(x.n_rows, x.n_cols), fmax(y.n_cols, y.n_rows));
+    
+    if(fmin(x.n_rows, x.n_cols) * fmin(y.n_rows, y.n_cols) != 1){
+        //We are not using vectors...
+        return enif_make_badarg(env);
+    }
+
+    result = cblas_ddot(n, x.content, 1, y.content, 1);
+    
+    return enif_make_double(env, result);
+}
 
 //------------------------------------------------------------------------
 
@@ -580,7 +611,10 @@ ErlNifFunc nif_funcs[] = {
     {"*_matrix", 2, _nif_mult_matrix},
     {"*_num", 2, nif_mult_num},
     {"tr", 1, nif_tr},
-    {"inv", 1, nif_inv}
+    {"inv", 1, nif_inv},
+    
+    //--- BLAS
+    {"ddot", 2, nif_ddot} 
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, NULL, NULL)

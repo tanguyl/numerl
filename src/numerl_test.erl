@@ -137,4 +137,11 @@ inv_test() ->
     io:fwrite(numerl:print(M_inv),[]),
     true = numerl:'=='(numerl:'*'(M, M_inv), numerl:eye(3)).
 
+ddot_test() ->
+    Incs = numerl:matrix([[1, 2, 3, 4]]),
+    Ones = numerl:matrix([[1], [1], [1], [1]]),
+    10.0 = numerl:ddot(Incs, Ones),
+    30.0 = numerl:ddot(Incs, Incs),
+    4.0 = numerl:ddot(Ones, Ones).
+
 

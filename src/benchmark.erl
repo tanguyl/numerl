@@ -19,8 +19,11 @@ bench(F ,Args ,N) ->
 
 %Run the function F a number of times.
 bench(F, Args)->
-    bench(F, Args, 5000).
+    bench(F, Args, 500000).
 
+%Creates a random matrix containing a single row.
+rnd_row(N)->
+    [[rand:uniform(100) || _ <- lists:seq(1,N)]].
 
 %Creates a random matrix of size NxN
 rnd_matrix(N)->
@@ -45,6 +48,13 @@ cmp_fct_1i(Size, Name, Mat_fct, Num_fct)->
 %The test is printed alongside Name.
 cmp_fct_1(Size, Name, Mat_fct, Num_fct)->
     M_e = rnd_matrix(Size),
+    M_n = numerl:matrix(M_e),
+    T_e = bench(Mat_fct, [M_e]),
+    T_n = bench(Num_fct, [M_n]),
+    show_results(Name, T_e, T_n).
+
+cmp_fct_1v(Size, Name, Mat_fct, Num_fct)->
+    M_e = rnd_row(Size),
     M_n = numerl:matrix(M_e),
     T_e = bench(Mat_fct, [M_e]),
     T_n = bench(Num_fct, [M_n]),
@@ -85,4 +95,3 @@ run(Size)->
     cmp_fct_1(Size, transpose, fun mat:tr/1, fun numerl:tr/1),
     cmp_fct_2(Size, mult, fun mat:'*'/2, fun numerl:'*'/2),
     cmp_fct_2im(Size, mult, fun mat:'*'/2, fun numerl:'*'/2).
-

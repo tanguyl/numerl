@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1]).
+-export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/2]).
 
 -record(matrix, {n_rows, n_cols, info}).
 
@@ -87,4 +87,11 @@ tr(_)->
 
 %Returns the inverse of asked square matrix.
 inv(_)->
+    nif_not_loaded.
+
+%------CBLAS--------
+
+%ddot: dot product of two vectors
+%
+ddot(_,_)->
     nif_not_loaded.
