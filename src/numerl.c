@@ -700,6 +700,32 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     return matrix_to_erl(env, nC);
 }
 
+//Arguments: int side_left, int side_up, int diag, number alpha, matrix A, matrix B
+ERL_NIF_TERM nif_dtrsm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix A, B;
+    double alpha;
+    int side_left, side_up, diag;
+
+    if(!enif_get(env, argv, "iiinmm", &side_left, &side_up, &diag, &alpha, &A, &B)
+        || A.n_rows != A.n_cols){
+        return enif_make_badarg(env);
+    }
+
+    Matrix nB = alloc_matrix(B.n_cols, B.n_rows);
+    memcpy(nB.content, B.content, B.bin.size);
+
+    cblas_dtrsm(CblasRowMajor,
+        side_left?CblasLeft:CblasRight,
+        side_up?CblasUpper:CblasLower,
+        CblasNoTrans,
+        diag?CblasUnit:CblasNonUnit,
+        nB.n_rows, nB.n_cols, alpha, A.content, A.n_rows, nB.content, nB.n_rows);
+
+    return matrix_to_erl(env, nB);
+
+}
+
+
 
 ErlNifFunc nif_funcs[] = {
     
@@ -718,12 +744,13 @@ ErlNifFunc nif_funcs[] = {
     {"tr", 1, nif_tr},
     {"inv", 1, nif_inv},
     
-    //--- BLAS
+    //--- BLAS----------
     {"ddot", 3, nif_ddot},
     {"daxpy", 4, nif_daxpy},
     {"dgemv", 5, nif_dgemv},
     {"dtrsv", 4, nif_dtrsv},
-    {"dgemm", 5, nif_dgemm}
+    {"dgemm", 5, nif_dgemm},
+    {"dtrsm", 6, nif_dtrsm}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, NULL, NULL)

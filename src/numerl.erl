@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dtrsv/4, dgemm/5]).
+-export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dtrsv/4, dgemm/5, dtrsm/6]).
 
 -record(matrix, {n_rows, n_cols, info}).
 
@@ -110,4 +110,8 @@ dtrsv(_,_,_,_)->
 
 %dgemm
 dgemm(_,_,_,_,_)->
+    nif_not_loaded.
+
+%dtrsm
+dtrsm(_,_,_,_,_,_)->
     nif_not_loaded.
