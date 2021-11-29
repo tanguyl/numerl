@@ -1,6 +1,0 @@
-{
-    "files.associations": {
-        "type_traits": "c",
-        "gsl_cblas.h": "c"
-    }
-}
