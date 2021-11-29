@@ -159,7 +159,7 @@ dgemv_test()->
 dtrsv_test()->
     M = numerl:matrix([[2,3], [0, 4]]),
     V = numerl:matrix([[8,8]]),
-    true = numerl:'=='(numerl:matrix([[1,2]]), numerl:dtrsv(1,0, M, V)).
+    true = numerl:'=='(numerl:matrix([[1,2]]), numerl:dtrsv(triUpper, nonUnitDiag, M, V)).
 
 dgemm_test()->
     A = numerl:matrix([[1,2]]),
@@ -170,4 +170,4 @@ dgemm_test()->
 dtrsm_test()->
     A = numerl:matrix([[1,2], [0,3]]),
     X = numerl:matrix([[2,0], [0,2]]),
-    true = numerl:'=='(X, numerl:dtrsm(1, 1, 0, 2.0, A, A)).
+    true = numerl:'=='(X, numerl:dtrsm(left, triUpper, nonUnitDiag, 2.0, A, A)).

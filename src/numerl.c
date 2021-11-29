@@ -113,6 +113,44 @@ int equal_ad(double* a, double* b, int size){
     return 1;
 }
 
+int read_choice(ErlNifEnv* env, ERL_NIF_TERM term, char* option1, char* option2, int* dest){
+    unsigned len;
+    char buffer[30];
+
+    FILE* fp;
+    fp = fopen("error.txt", "w+");
+    if(!enif_get_atom_length(env, term, &len, ERL_NIF_LATIN1)){
+        fprintf(fp, "atom length");
+        
+    fclose(fp);
+        return 0;
+    }
+    if( len > 30){
+        fprintf(fp, " len");
+        fclose(fp);
+        return 0;
+    }
+    if(! enif_get_atom(env, term, buffer, 30, ERL_NIF_LATIN1)){
+        fprintf(fp, "Could not read atom");
+        
+        fclose(fp);
+        return 0;
+    }
+
+    if(!strcmp(buffer, option1))
+        *dest = 1;
+    else if(!strcmp(buffer, option2))
+        *dest = 0;
+    else{
+        fprintf(fp, "Invalid content.");
+        fclose(fp);
+        return 0;
+    }
+    
+    fclose(fp);
+    return 1;
+}
+
 //Used to translate at once a number of ERL_NIF_TERM.
 //Data types are infered via content of format string:
 //  n: number (int or double) translated to double.
@@ -145,6 +183,26 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
                 //Reads an int.
                 valid = enif_get_int(env, *erl_terms, va_arg(valist, int*));
                 break;
+
+            case 'v':
+                //Read vertical axis: triUpper, triLower.
+                //Set value to 1 if upper; 0 if lower; otherwise returns invalid.
+                valid = read_choice(env, *erl_terms, "triUpper", "triLower", (va_arg(valist, int*)));
+                break;
+                
+
+            case 'h':
+            //Read horizontal axis: left, right.
+            //Set value to 1 left 0 if right; otherwise returns invalid.
+                valid = read_choice(env, *erl_terms, "left", "right", (va_arg(valist, int*)));
+                break;
+
+            case 'u':
+                //Read unit: unitDiag, nonUnitDiag.
+                //Set value to 1 if unitDiag; 0 if nonUnitDiag; otherwise returns invalid.
+                valid = read_choice(env, *erl_terms, "unitDiag", "nonUnitDiag", (va_arg(valist, int*)));
+                break;
+
             
             default:
                 //Unknown type... give an error.
@@ -656,7 +714,7 @@ ERL_NIF_TERM nif_dtrsv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     int upper;      //Matrix is either upper or lower
     int diagu;      //If diag unit: consider diag is unit. Otherwise, use value present.
 
-    if(!enif_get(env, argv, "iimm", &upper, &diagu, &A, &x)
+    if(!enif_get(env, argv, "vumm", &upper, &diagu, &A, &x)
             || A.n_rows != A.n_cols 
             || fmax(x.n_cols, x.n_rows) < A.n_rows){
 
@@ -674,6 +732,7 @@ ERL_NIF_TERM nif_dtrsv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     return matrix_to_erl(env, nx);
 }
+
 
 //Arguments: double alpha, matrix A, matrix B, double beta, matrix C
 ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
@@ -706,7 +765,7 @@ ERL_NIF_TERM nif_dtrsm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     double alpha;
     int side_left, side_up, diag;
 
-    if(!enif_get(env, argv, "iiinmm", &side_left, &side_up, &diag, &alpha, &A, &B)
+    if(!enif_get(env, argv, "hvunmm", &side_left, &side_up, &diag, &alpha, &A, &B)
         || A.n_rows != A.n_cols){
         return enif_make_badarg(env);
     }
@@ -728,7 +787,6 @@ ERL_NIF_TERM nif_dtrsm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 
 ErlNifFunc nif_funcs[] = {
-    
     {"matrix", 1, nif_matrix},
     {"print", 1, nif_matrix_print},
     {"get", 3, nif_get},
