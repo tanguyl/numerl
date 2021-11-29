@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <gsl/gsl_cblas.h>
+#include <lapacke.h>
 
 /*
 ----------------------------------------------------------------------------------------------------|
@@ -53,7 +54,7 @@ double* matrix_at(int col, int row, Matrix m){
 //Allocates memory space of for matrix of dimensions n_rows, n_cols.
 //The matrix_content can be modified, until a call to array_to_erl.
 //Matrix content is stored in row major format.
-Matrix alloc_matrix(int n_rows, int n_cols){
+Matrix matrix_alloc(int n_rows, int n_cols){
     ErlNifBinary bin;
 
     enif_alloc_binary(sizeof(double)*n_rows*n_cols, &bin);
@@ -65,6 +66,14 @@ Matrix alloc_matrix(int n_rows, int n_cols){
     matrix.content = (double*) bin.data;
 
     return matrix;
+}
+
+//Creates a duplicate of a matrix.
+//This duplicate can be modified untill uploaded.
+Matrix matrix_dup(Matrix m){
+    Matrix d = matrix_alloc(m.n_rows, m.n_cols);
+    memcpy(d.content, m.content, d.bin.size);
+    return d;
 }
 
 //Free an allocated matrix that was not sent back to Erlang.
@@ -117,37 +126,18 @@ int read_choice(ErlNifEnv* env, ERL_NIF_TERM term, char* option1, char* option2,
     unsigned len;
     char buffer[30];
 
-    FILE* fp;
-    fp = fopen("error.txt", "w+");
-    if(!enif_get_atom_length(env, term, &len, ERL_NIF_LATIN1)){
-        fprintf(fp, "atom length");
-        
-    fclose(fp);
+   
+    if(!enif_get_atom_length(env, term, &len, ERL_NIF_LATIN1)
+            || len > 30
+            || ! enif_get_atom(env, term, buffer, 30, ERL_NIF_LATIN1))
         return 0;
-    }
-    if( len > 30){
-        fprintf(fp, " len");
-        fclose(fp);
-        return 0;
-    }
-    if(! enif_get_atom(env, term, buffer, 30, ERL_NIF_LATIN1)){
-        fprintf(fp, "Could not read atom");
-        
-        fclose(fp);
-        return 0;
-    }
 
     if(!strcmp(buffer, option1))
         *dest = 1;
     else if(!strcmp(buffer, option2))
         *dest = 0;
-    else{
-        fprintf(fp, "Invalid content.");
-        fclose(fp);
+    else
         return 0;
-    }
-    
-    fclose(fp);
     return 1;
 }
 
@@ -242,7 +232,7 @@ ERL_NIF_TERM nif_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         if(n_cols == -1){
             //Allocate binary, make matrix accessor.
             n_cols = line_length;
-            m = alloc_matrix(n_rows,n_cols);
+            m = matrix_alloc(n_rows,n_cols);
         }
 
         if(n_cols != line_length)
@@ -356,7 +346,7 @@ ERL_NIF_TERM nif_row(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     if(row_req<0 || row_req >= matrix.n_rows)
         return enif_make_badarg(env);
 
-    Matrix row = alloc_matrix(1, matrix.n_cols);
+    Matrix row = matrix_alloc(1, matrix.n_cols);
     memcpy(row.content, matrix.content + (row_req * matrix.n_cols), matrix.n_cols*sizeof(double));
 
     return matrix_to_erl(env, row);
@@ -377,7 +367,7 @@ ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
 
 
-    Matrix col = alloc_matrix(matrix.n_rows, 1);
+    Matrix col = matrix_alloc(matrix.n_rows, 1);
 
     for(int i = 0; i < matrix.n_rows; i++){
         col.content[i] = matrix.content[i * matrix.n_rows + col_req];
@@ -400,7 +390,7 @@ ERL_NIF_TERM nif_plus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    Matrix result = alloc_matrix(a.n_rows, a.n_cols);
+    Matrix result = matrix_alloc(a.n_rows, a.n_cols);
     
     for(int i = 0; i < a.n_cols; i++){
         for(int j = 0; j < a.n_rows; j++){
@@ -424,7 +414,7 @@ ERL_NIF_TERM nif_minus(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    Matrix result = alloc_matrix(a.n_rows, a.n_cols);
+    Matrix result = matrix_alloc(a.n_rows, a.n_cols);
     
     for(int i = 0; i < a.n_cols; i++){
         for(int j = 0; j < a.n_rows; j++){
@@ -443,7 +433,7 @@ ERL_NIF_TERM nif_zero(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     if(!enif_get(env, argv, "ii", &m, &n))
         return enif_make_badarg(env);
 
-    Matrix a = alloc_matrix(m,n);
+    Matrix a = matrix_alloc(m,n);
     memset(a.content, 0, sizeof(double)*m*n);
     return matrix_to_erl(env, a);
 }
@@ -459,7 +449,7 @@ ERL_NIF_TERM nif_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     if(m <= 0)
         return enif_make_badarg(env);
 
-    Matrix a = alloc_matrix(m,m);
+    Matrix a = matrix_alloc(m,m);
     memset(a.content, 0, sizeof(double)*m*m);
     for(int i = 0; i<m; i++){
         a.content[i*m+i] = 1.0;
@@ -469,7 +459,7 @@ ERL_NIF_TERM nif_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 //Transpose of a matrix.
 Matrix tr(Matrix a){
-    Matrix result = alloc_matrix(a.n_cols ,a.n_rows);
+    Matrix result = matrix_alloc(a.n_cols ,a.n_rows);
 
     for(int j = 0; j < a.n_rows; j++){
         for(int i = 0; i < a.n_cols; i++){
@@ -489,7 +479,7 @@ ERL_NIF_TERM nif_mult_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     if(!enif_get(env, argv, "nm", &a, &b))
         return enif_make_badarg(env);
 
-    Matrix c = alloc_matrix(b.n_rows, b.n_cols);
+    Matrix c = matrix_alloc(b.n_rows, b.n_cols);
 
     for(int i = 0; i<b.n_cols*b.n_rows; i++){
         c.content[i] = a * b.content[i];
@@ -513,7 +503,7 @@ ERL_NIF_TERM _nif_mult_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[
     if(a.n_cols != b.n_rows)
         return atom_nok;
 
-    Matrix result = alloc_matrix(n_rows, n_cols);
+    Matrix result = matrix_alloc(n_rows, n_cols);
     memset(result.content, 0.0, n_rows*n_cols * sizeof(double));
 
     //Will this create a mem leak?
@@ -610,7 +600,7 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     }
     
-    Matrix inv = alloc_matrix(a.n_rows, a.n_cols);
+    Matrix inv = matrix_alloc(a.n_rows, a.n_cols);
     for(int l=0; l<inv.n_rows; l++){
         int line_start = l*n_cols + a.n_cols;
         memcpy(inv.content + inv.n_cols*l, gj + line_start, sizeof(double)*inv.n_cols);
@@ -667,8 +657,7 @@ ERL_NIF_TERM nif_daxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    Matrix ny = alloc_matrix(y.n_rows, y.n_cols);
-    memcpy(ny.content, y.content, ny.bin.size);
+    Matrix ny = matrix_dup(y);
 
     cblas_daxpy(n, alpha, x.content, 1, ny.content, 1);
 
@@ -694,8 +683,7 @@ ERL_NIF_TERM nif_dgemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         enif_make_badarg(env);
     }
 
-    Matrix ny = alloc_matrix(y.n_rows, y.n_cols);
-    memcpy(ny.content, y.content, ny.bin.size);
+    Matrix ny = matrix_dup(y);
 
     cblas_dgemv(CblasRowMajor, CblasNoTrans, A.n_rows, A.n_cols, alpha, A.content, A.n_rows, x.content, 1,  beta, ny.content, 1);
 
@@ -721,8 +709,7 @@ ERL_NIF_TERM nif_dtrsv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    Matrix nx = alloc_matrix(x.n_rows, x.n_cols);
-    memcpy(nx.content, x.content, nx.bin.size);
+    Matrix nx = matrix_dup(x);
 
     cblas_dtrsv(CblasRowMajor,
         upper?CblasUpper:CblasLower,
@@ -748,8 +735,7 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
 
-    Matrix nC = alloc_matrix(C.n_rows, C.n_cols);
-    memcpy(nC.content, C.content, nC.bin.size);
+    Matrix nC = matrix_dup(C);
 
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
     A.n_rows, B.n_cols, A.n_cols,
@@ -766,12 +752,11 @@ ERL_NIF_TERM nif_dtrsm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     int side_left, side_up, diag;
 
     if(!enif_get(env, argv, "hvunmm", &side_left, &side_up, &diag, &alpha, &A, &B)
-        || A.n_rows != A.n_cols){
+            || A.n_rows != A.n_cols){
         return enif_make_badarg(env);
     }
 
-    Matrix nB = alloc_matrix(B.n_cols, B.n_rows);
-    memcpy(nB.content, B.content, B.bin.size);
+    Matrix nB = matrix_dup(B);
 
     cblas_dtrsm(CblasRowMajor,
         side_left?CblasLeft:CblasRight,
@@ -785,6 +770,43 @@ ERL_NIF_TERM nif_dtrsm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 
+//Arguments: A,B.
+//Finds matrix X such that A*X = B.
+ERL_NIF_TERM nif_dgesv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix A,B;
+
+    if(!enif_get(env, argv, "mm", &A, &B)
+            || A.n_rows != A.n_cols
+            || B.n_rows != A.n_rows){
+        return enif_make_badarg(env);
+    }
+
+    int n = A.n_rows;
+    Matrix nA = matrix_dup(A);
+    Matrix nB = matrix_dup(B);
+    int* ipiv = enif_alloc(sizeof(int)*n);
+
+    int error = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, nB.n_cols, nA.content, n, ipiv, nB.content, nB.n_rows);
+
+    if(!error){
+        //CORRECT THIS SHIT RIGHT HERE
+        int in_place = 1;
+        for(int i = 0; i<n && in_place; i++)
+            if(!ipiv[i] != i)
+                in_place = 0;
+        
+        if(in_place)
+            return enif_make_badarg(env);
+                
+        return matrix_to_erl(env, nB);
+    }
+    else if (error < 0){
+        return enif_make_badarg(env);
+    }
+    else{
+        return enif_make_atom(env, "Invalid LAPACKE argument.\n");
+    }
+}
 
 ErlNifFunc nif_funcs[] = {
     {"matrix", 1, nif_matrix},
@@ -808,7 +830,8 @@ ErlNifFunc nif_funcs[] = {
     {"dgemv", 5, nif_dgemv},
     {"dtrsv", 4, nif_dtrsv},
     {"dgemm", 5, nif_dgemm},
-    {"dtrsm", 6, nif_dtrsm}
+    {"dtrsm", 6, nif_dtrsm},
+    {"dgesv", 2, nif_dgesv}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, NULL, NULL)

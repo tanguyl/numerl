@@ -21,7 +21,7 @@ $(EBIN)/%.beam: $(SRC)/%.erl
 	$(ERLHOME)/bin/erlc  -W -b beam -o $(EBIN) $(EFLAGS) $(WAIT) $<
 
 $(EBIN)/%_nif.so: $(SRC)/%.c
-	gcc -fpic -shared $(EFLAGS) -o $@ $< -lgsl -lgslcblas -lm 
+	gcc -fpic -shared $(EFLAGS) -o $@ $< -llapacke -llapack -lblas -lgsl -lgslcblas -lm 
 
  
 all: $(TARGETS)

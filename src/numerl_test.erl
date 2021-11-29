@@ -171,3 +171,9 @@ dtrsm_test()->
     A = numerl:matrix([[1,2], [0,3]]),
     X = numerl:matrix([[2,0], [0,2]]),
     true = numerl:'=='(X, numerl:dtrsm(left, triUpper, nonUnitDiag, 2.0, A, A)).
+
+dgesv_test()->
+    A = numerl:matrix([[1,2],[0,3]]),
+    B = numerl:matrix([[2,4],[0,6]]),
+    X = numerl:matrix([[2,0], [0,2]]),
+    true = numerl:'=='(X, numerl:dgesv(A, B)).
