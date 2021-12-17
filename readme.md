@@ -22,21 +22,40 @@ Matrix creation is done as such:
 
 The eye and zero functions take as argument a positive number; list\_to\_matrix takes a list of list of numbers (floats or ints).
     - get, row, col
-    - operator ==, +, -, *
 
 # Operators
 
 The following operators are implemented: comparison, addition, and multiplication.
+
     > NotTrue = numerl:'=='(L0, Eye).
     > Eye2 = numerl:'+'(Eye, Zeros).
     > Neye = numerl:'-'(Zeros, Eye).
     > Mult = numerl:'*'(L0, L0).
 
+# Accessors
+
+Access to elements / columns / rows of matrices is done as such:
+
+    > One = numerl:get(Eye, 1,1).
+    > OneO = numerl:row(Eye, 1).
+    > OOne = numerl:col(Eye, 2).
+
 # BLAS
 
-Support for the following BLAS function was added:
- -ddot
- -daxpy
- -dgemv
- -dgemm
- -dgesv
+BLAS are highly optimized functions written to compute operations between matrices and vectors. In numerl, vectors are simply matrices with at least a dimension of size 1:
+
+    > X = numerl:matrix([[1.0, 2.0]]).
+    > Y = numerl:matrix([[3], [4]]).
+
+
+ddot returns the dot produtc of the first N values contained in X and Y, vectors.
+    > DotRes = numerl:ddot(N,X,Y).
+
+daxpy returns the result of Alpha*X + Y, taking into account the first N coordinates of vectors X and Y, alpha being a number.
+    > DaxRes = numerl:daxpy(N, Alpha, X, Y).
+
+dgemv returns the result of Alpha*A*X + Beta * Y. Alpha and Beta are numbers; M is a matrix; X and Y are vectors.
+    > GemvRes = numerl:dgemv(Alpha, A, X, Beta, Y).
+
+dgemm returns the result of Alpha*A*B + Beta * C. Alpha and Beta are numbers; A,B and C are matrices.
+    > GemmRes = numerl:dgemv(Alpha, A, B, Beta, C).
