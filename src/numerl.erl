@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dtrsv/4, dgemm/5, dtrsm/6, dgesv/2]).
+-export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dgemm/5, dgesv/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -117,20 +117,7 @@ dgemv(_,_,_,_,_)->
 dgemm(_,_,_,_,_)->
     nif_not_loaded.
 
-% dtrsv: A*x = b.
-% Arguments: TriangularType tri, DiagonalType diag, Matrix A, vector B.
-%   tri: TriangularType is either triUpper or triLower, for upper or lower triangular matrices.
-%   diag: DiagonalType is either unitDiag or nonUnitDiag, wether the function should consider the diagonal is unit, or should read the diagonal values.
-%   A is a matrix.
-% Returns the solution x of the system of equation A*x = b.
-% The returned vector is in the same dimension as y(column or row).
-dtrsv(_,_,_,_)->
-    nif_not_loaded.
-
-%dtrsm:
-dtrsm(_,_,_,_,_,_)->
-    nif_not_loaded.
 %
-%dgesv: A*x = b.
+%dgesv: solve x for A*x = b.
 dgesv(_,_)->
     nif_not_loaded.

@@ -691,35 +691,6 @@ ERL_NIF_TERM nif_dgemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 
-//Arguments: int upper, int diagu, matrix A, vector x.
-//upper: use A as an upper or lower matrix?
-//diagu: consider the diagonal of A is made of 1s?
-//A: matrix A.
-//x: vector x.
-//Returns the vector inv(A)*x. if A is square, x of compatible dimensions.
-ERL_NIF_TERM nif_dtrsv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix A,x;
-    int upper;      //Matrix is either upper or lower
-    int diagu;      //If diag unit: consider diag is unit. Otherwise, use value present.
-
-    if(!enif_get(env, argv, "vumm", &upper, &diagu, &A, &x)
-            || A.n_rows != A.n_cols 
-            || fmax(x.n_cols, x.n_rows) < A.n_rows){
-
-        return enif_make_badarg(env);
-    }
-
-    Matrix nx = matrix_dup(x);
-
-    cblas_dtrsv(CblasRowMajor,
-        upper?CblasUpper:CblasLower,
-        CblasNoTrans,
-        diagu?CblasUnit:CblasNonUnit,
-        A.n_rows, A.content, A.n_rows, nx.content, 1);
-
-    return matrix_to_erl(env, nx);
-}
-
 
 //Arguments: double alpha, matrix A, matrix B, double beta, matrix C
 ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
@@ -745,29 +716,6 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     return matrix_to_erl(env, nC);
 }
 
-//Arguments: int side_left, int side_up, int diag, number alpha, matrix A, matrix B
-ERL_NIF_TERM nif_dtrsm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix A, B;
-    double alpha;
-    int side_left, side_up, diag;
-
-    if(!enif_get(env, argv, "hvunmm", &side_left, &side_up, &diag, &alpha, &A, &B)
-            || A.n_rows != A.n_cols){
-        return enif_make_badarg(env);
-    }
-
-    Matrix nB = matrix_dup(B);
-
-    cblas_dtrsm(CblasRowMajor,
-        side_left?CblasLeft:CblasRight,
-        side_up?CblasUpper:CblasLower,
-        CblasNoTrans,
-        diag?CblasUnit:CblasNonUnit,
-        nB.n_rows, nB.n_cols, alpha, A.content, A.n_rows, nB.content, nB.n_rows);
-
-    return matrix_to_erl(env, nB);
-
-}
 
 
 //Arguments: A,B.
@@ -828,9 +776,7 @@ ErlNifFunc nif_funcs[] = {
     {"ddot", 3, nif_ddot},
     {"daxpy", 4, nif_daxpy},
     {"dgemv", 5, nif_dgemv},
-    {"dtrsv", 4, nif_dtrsv},
     {"dgemm", 5, nif_dgemm},
-    {"dtrsm", 6, nif_dtrsm},
     {"dgesv", 2, nif_dgesv}
 };
 
