@@ -4,7 +4,7 @@ Numerical Erlang is a small API for matrix operations in Erlang, done in NIFs.
 
 # INSTALLATION
 
-Currently, this project is done trought a makefile. Install the following packages:
+This project is built trough a makefile. Install the following packages:
 '''
     sudo apt-get install gcc erlang erlang-eunit liblapacke-dev libgslcblas0 
 '''
@@ -14,14 +14,13 @@ From there, run 'make' to build the project.
 
 # Matrix creation
 
-Matrix creation is done as such:
+Matrix are created the following ways:
 
     > L0 = numerl:list_to_matrix([[1, 2.0], [3, 4.0]]).
     > Eye = numerl:eye(2).
     > Zeros = numerl:zeros(2).
 
-The eye and zero functions take as argument a positive number; list\_to\_matrix takes a list of list of numbers (floats or ints).
-    - get, row, col
+The eye and zero functions take as argument positive numbers; list\_to\_matrix takes a list of list of numbers (floats or ints).
 
 # Operators
 
@@ -42,7 +41,7 @@ Access to elements / columns / rows of matrices is done as such:
 
 # BLAS
 
-BLAS are highly optimized functions written to compute operations between matrices and vectors. In numerl, vectors are simply matrices with at least a dimension of size 1:
+BLAS are stardart, highly optimized functions written to compute operations between matrices and vectors. In numerl, vectors are simply matrices with at least one dimension of size 1:
 
     > X = numerl:matrix([[1.0, 2.0]]).
     > Y = numerl:matrix([[3], [4]]).
