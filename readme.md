@@ -30,11 +30,6 @@ The following operators are implemented: comparison, addition, and multiplicatio
     Eye2 = numerl:'+'(Eye, Zeros).
     Neye = numerl:'-'(Zeros, Eye).
     Mult = numerl:'*'(L0, L0).
-    
-The function print can be used to return an atom representation of a matrix.
-    
-    numerl:print(numerl:eye(2)).
-        '[[1.00000 0.00000][0.00000 1.00000]]'
 
 # Accessors
 
@@ -43,6 +38,12 @@ Access to elements / columns / rows of matrices is done as such:
     One = numerl:get(Eye, 1,1).
     OneO = numerl:row(Eye, 1).
     OOne = numerl:col(Eye, 2).
+    
+        
+The function print can be used to return an atom representation of a matrix.
+    
+    numerl:print(numerl:eye(2)).
+        '[[1.00000 0.00000][0.00000 1.00000]]'
 
 # BLAS
 
