@@ -10,16 +10,19 @@ bench(_,_,_,0,R)->
     R;
 
 bench(F, Args,N,I,R)->
-    {Time, _} = timer:tc(F, Args),
+    A = Args(N),
+    {Time, _} = timer:tc(F, A),
     bench(F, Args, N,I-1, R+(Time/float(N))).
 
-%Run the function N time to get it's average performance.
+%Run the function N time to get its average performance.
 bench(F ,Args ,N) ->
     bench(F, Args, N, N, 0.0).
 
 %Run the function F a number of times.
 bench(F, Args)->
-    bench(F, Args, 500000).
+    bench(F, Args, 5).
+
+
 
 %Creates a random matrix containing a single row.
 rnd_row(N)->
@@ -36,6 +39,26 @@ rnd() ->
 %Prints the given results.
 show_results(Name, T_e, T_n)->
     io:format("~nTesting ~w\nErlang native:  ~f\nNif: ~f\nFactor:~f~n", [Name,T_e, T_n, T_e/T_n]).
+
+%Save a function
+write_to_file(Name, Intervals, Values)->
+    FName = string:concat(string:concat("../benchRes/", Name), ".txt"),
+    {ok, File} = file:open(FName, [write]),
+    io:fwrite(File, "~p~n~p", [Intervals, Values]).
+
+%Do a benchmark of inv function in range 1 -> 500
+bench_inv()->
+    io:format("Running benchmark inv."),
+    Steps = lists:seq(1, 100, 10),
+    Results = [bench(fun numerl:inv/1, fun(N) -> [numerl:matrix(rnd_matrix(N))] end, N) || N <- Steps],
+    write_to_file("inv_c", "~p~n~p", [Steps, Results]).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Old things
+%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %Runs test for Mat_fct, Num_fct functions having as argument I, an int.
 %The test is printed alongside Name.
