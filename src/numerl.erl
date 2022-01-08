@@ -5,10 +5,17 @@
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
 
-%%  Load nif.
 init()->
-    erlang:load_nif("./numerl_nif", 0).
-
+  Dir = case code:priv_dir(numerl) of
+              {error, bad_name} ->
+                  filename:join(
+                    filename:dirname(
+                      filename:dirname(
+                        code:which(?MODULE))), "priv");
+              D -> D
+          end,
+    SoName = filename:join(Dir, atom_to_list(?MODULE)),
+    erlang:load_nif(SoName, 0).
 
 %%Creates a matrix.
 %List: List of doubles, of length N.

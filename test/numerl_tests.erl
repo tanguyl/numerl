@@ -1,4 +1,5 @@
--module(numerl_test).
+-module(numerl_tests).
+-compile(export_all).
 -include_lib("eunit/include/eunit.hrl").
 
 matrix_test() ->
@@ -8,7 +9,6 @@ matrix_test() ->
 print_test() ->
     M0 = numerl:matrix([[1.0/3.0, 0.0], [0.0, 1.0/3.0]]),
     numerl:print(M0).
-
 
 get_test() ->
     %Testing access on square matrix
