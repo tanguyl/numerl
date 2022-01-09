@@ -30,6 +30,8 @@ The following operators are implemented: comparison, addition, and multiplicatio
     Eye2 = numerl:'+'(Eye, Zeros).
     Neye = numerl:'-'(Zeros, Eye).
     Mult = numerl:'*'(L0, L0).
+    Inv = numerl:inv(L0).
+    Tr = numerl:tr(L0).
 
 # Accessors
 
