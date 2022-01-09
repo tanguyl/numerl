@@ -4,7 +4,7 @@ NumErl is a small API for matrix operations in Erlang.
 
 # Installation
 
-This project is built trough a makefile. Install the following packages:
+This project is built through a makefile. Install the following packages:
 
     sudo apt-get install gcc erlang erlang-eunit liblapacke-dev libgslcblas0 
 
