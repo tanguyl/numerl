@@ -4,13 +4,13 @@ NumErl is a small API for matrix operations in Erlang.
 
 # Installation
 
-This project should be used as a rebar3 dependency as such:
+This project is built through a makefile. Install the following packages:
 
-    {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
+    sudo apt-get install gcc erlang erlang-eunit liblapacke-dev libgslcblas0 
 
-Make sure you have the following packages installed:
 
-    sudo apt-get install liblapacke-dev libgslcblas0 
+From there, run 'make' to build the project.
+
 
 # Matrix creation
 
@@ -26,12 +26,12 @@ The eye and zero functions take as argument positive numbers; list\_to\_matrix t
 
 The following operators are implemented: comparison, addition, and multiplication.
 
-    NotTrue = numerl:'=='(L0, Eye).
-    Eye2 = numerl:'+'(Eye, Zeros).
-    Neye = numerl:'-'(Zeros, Eye).
-    Mult = numerl:'*'(L0, L0).
+    NotTrue = numerl:equals(L0, Eye).
+    Eye2 = numerl:add(Eye, Zeros).
+    Neye = numerl:sub(Zeros, Eye).
+    Mult = numerl:dot(L0, L0).
     Inv = numerl:inv(L0).
-    Tr = numerl:tr(L0).
+    Tr = numerl:transpose(L0).
 
 # Accessors
 
