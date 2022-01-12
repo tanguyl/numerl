@@ -1,5 +1,5 @@
 {application, numerl,
- [{description, "matrices in Erlang"},
+ [{description, "Matrices in Erlang"},
   {vsn, "0.1.0"},
   {registered, []},
   {applications,
@@ -10,5 +10,6 @@
   {modules, []},
 
   {licenses, ["Apache 2.0"]},
-  {links, []}
+  {pkg_name, ["numerl"]},
+  {links, ["GitHub", "https://github.com/tanguyl/numerl"]}
  ]}.
