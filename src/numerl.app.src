@@ -11,5 +11,4 @@
 
   {licenses, ["Apache 2.0"]},
   {pkg_name, ["numerl"]},
-  {links, ["GitHub", "https://github.com/tanguyl/numerl"]}
- ]}.
+  {links, [{"GitHub", "https://github.com/tanguyl/numerl"}]}]}.
