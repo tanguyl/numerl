@@ -4,13 +4,17 @@ NumErl is a small API for matrix operations in Erlang.
 
 # Installation
 
-This project is built through a makefile. Install the following packages:
+This project should be used as a rebar3 dependency:
 
-```sh
-sudo apt-get install gcc erlang erlang-eunit liblapacke-dev libgslcblas0 
+```erlang
+    {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
 ```
 
-From there, run 'make' to build the project.
+The following packages are required:
+
+```sh
+    sudo apt-get install liblapacke-dev libgslcblas0 
+```
 
 
 # Matrix creation
