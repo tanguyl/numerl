@@ -2,9 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h> 
-//#include <cblas.h>
-#include <gsl/gsl_cblas.h>
-#include <lapacke.h>
+#include <cblas.h>
 
 /*
 ----------------------------------------------------------------------------------------------------|
@@ -298,7 +296,6 @@ ERL_NIF_TERM nif_matrix_print(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[
 //@arg 2: int, coord n: col
 //@return: double, at cord Matrix(m,n).
 ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
-    ErlNifBinary bin;
     int m,n;
     Matrix matrix;
 
@@ -717,46 +714,6 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     return matrix_to_erl(env, nC);
 }
 
-
-
-//Arguments: A,B.
-//Finds matrix X such that A*X = B.
-ERL_NIF_TERM nif_dgesv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix A,B;
-
-    if(!enif_get(env, argv, "mm", &A, &B)
-            || A.n_rows != A.n_cols
-            || B.n_rows != A.n_rows){
-        return enif_make_badarg(env);
-    }
-
-    int n = A.n_rows;
-    Matrix nA = matrix_dup(A);
-    Matrix nB = matrix_dup(B);
-    int* ipiv = enif_alloc(sizeof(int)*n);
-
-    int error = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, nB.n_cols, nA.content, n, ipiv, nB.content, nB.n_rows);
-
-    if(!error){
-        //CORRECT THIS SHIT RIGHT HERE
-        int in_place = 1;
-        for(int i = 0; i<n && in_place; i++)
-            if(!ipiv[i] != i)
-                in_place = 0;
-        
-        if(in_place)
-            return enif_make_badarg(env);
-                
-        return matrix_to_erl(env, nB);
-    }
-    else if (error < 0){
-        return enif_make_badarg(env);
-    }
-    else{
-        return enif_make_atom(env, "Invalid LAPACKE argument.\n");
-    }
-}
-
 ErlNifFunc nif_funcs[] = {
     {"matrix", 1, nif_matrix},
     {"print", 1, nif_matrix_print},
@@ -777,8 +734,7 @@ ErlNifFunc nif_funcs[] = {
     {"ddot", 3, nif_ddot},
     {"daxpy", 4, nif_daxpy},
     {"dgemv", 5, nif_dgemv},
-    {"dgemm", 5, nif_dgemm},
-    {"dgesv", 2, nif_dgesv}
+    {"dgemm", 5, nif_dgemm}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, upgrade, NULL)

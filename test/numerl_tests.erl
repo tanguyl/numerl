@@ -147,9 +147,3 @@ dgemm_test()->
     B = numerl:matrix([[3,4], [5,6]]),
     C = numerl:matrix([[10, 12]]),
     true = numerl:equals(numerl:matrix([[31, 38]]), numerl:dgemm(2,A,B,0.5,C)).
-
-dgesv_test()->
-    A = numerl:matrix([[1,2],[0,3]]),
-    B = numerl:matrix([[2,4],[0,6]]),
-    X = numerl:matrix([[2,0], [0,2]]),
-    true = numerl:equals(X, numerl:dgesv(A, B)).
