@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, '=='/2, '+'/2, '-'/2,'*'/2, matrix/1, get/3, row/2, col/2, tr/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dgemm/5, dgesv/2]).
+-export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, matrix/1, get/3, row/2, col/2, transpose/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dgemm/5, dgesv/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -38,24 +38,24 @@ col(_,_) ->
 
 
 %%Equality test between matrixes.
-'=='(_, _) ->
+'equals'(_, _) ->
     nif_not_loaded.
 
 
 %%Addition of matrix.
 
-'+'(_, _) ->
+add(_, _) ->
     nif_not_loaded.
 
 
 %%Substraction of matrix.
-'-'(_, _) ->
+sub(_, _) ->
     nif_not_loaded.
 
 
 %% Matrix multiplication.
-'*'(A,B) when is_number(A) -> '*_num'(A,B);
-'*'(A,B) -> '*_matrix'(A,B).
+dot(A,B) when is_number(A) -> '*_num'(A,B);
+dot(A,B) -> '*_matrix'(A,B).
 
 '*_num'(_,_)->
     nif_not_loaded.
@@ -77,7 +77,7 @@ print(_)->
     nif_not_loaded.
 
 %Returns the transpose of the given square matrix.
-tr(_)->
+transpose(_)->
     nif_not_loaded.
 
 %Returns the inverse of asked square matrix.
