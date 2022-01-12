@@ -1,7 +1,8 @@
 #include <erl_nif.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+#include <math.h> 
+//#include <cblas.h>
 #include <gsl/gsl_cblas.h>
 #include <lapacke.h>
 
@@ -30,7 +31,7 @@ int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info){
 }
 
 int upgrade(ErlNifEnv* caller_env, void** priv_data, void** old_priv_data, ERL_NIF_TERM load_info){
-
+    return 0;
 }
 
 //Gives easier access to an ErlangBinary containing a matrix.
@@ -780,4 +781,4 @@ ErlNifFunc nif_funcs[] = {
     {"dgesv", 2, nif_dgesv}
 };
 
-ERL_NIF_INIT(numerl, nif_funcs, load, NULL, NULL, NULL)
+ERL_NIF_INIT(numerl, nif_funcs, load, NULL, upgrade, NULL)
