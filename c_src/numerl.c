@@ -134,35 +134,6 @@ int enif_get_matrix(ErlNifEnv* env, ERL_NIF_TERM term, Matrix *dest){
     return 1;
 }
 
-//Equal all doubles
-//Compares wether all doubles are approximatively the same.
-int equal_ad(double* a, double* b, int size){
-    for(int i = 0; i<size; i++){
-        if(fabs(a[i] - b[i])> 1e-6)
-            return 0;
-    }
-    return 1;
-}
-
-int read_choice(ErlNifEnv* env, ERL_NIF_TERM term, char* option1, char* option2, int* dest){
-    unsigned len;
-    char buffer[30];
-
-   
-    if(!enif_get_atom_length(env, term, &len, ERL_NIF_LATIN1)
-            || len > 30
-            || ! enif_get_atom(env, term, buffer, 30, ERL_NIF_LATIN1))
-        return 0;
-
-    if(!strcmp(buffer, option1))
-        *dest = 1;
-    else if(!strcmp(buffer, option2))
-        *dest = 0;
-    else
-        return 0;
-    return 1;
-}
-
 //Used to translate at once a number of ERL_NIF_TERM.
 //Data types are infered via content of format string:
 //  n: number (int or double) translated to double.
@@ -172,21 +143,6 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
     va_list valist;
     va_start(valist, format);
     int valid = 1;
-
-    
-    for(int i = 0; i < strlen(format) && valid; i++){
-        switch(format[i]){
-            case 'n':
-                if(!enif_is_number(env, erl_terms[i]))
-                    return 0;
-                break;
-            
-            case 'm':
-                if(!enif_is_matrix(env, erl_terms[i]))
-                    return 0;
-                break;
-        }
-    }
 
     while(valid && *format != '\0'){
         switch(*format++){
@@ -328,6 +284,17 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     return enif_make_double(env, matrix.content[index]);
 }
 
+
+
+//Equal all doubles
+//Compares wether all doubles are approximatively the same.
+int equal_ad(double* a, double* b, int size){
+    for(int i = 0; i<size; i++){
+        if(fabs(a[i] - b[i])> 1e-6)
+            return 0;
+    }
+    return 1;
+}
 
 //@arg 0: Array.
 //@arg 1: Array.
