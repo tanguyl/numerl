@@ -38,7 +38,8 @@ equal_test() ->
     true = numerl:equals(CM0, CM0),
     false = numerl:equals(CM1, CM2),
     false = numerl:equals(CM0, CM2),
-    false = numerl:equals(CM0, CM1).
+    false = numerl:equals(CM0, CM1),
+    false = numerl:equals(CM0,1).
 
 row_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],

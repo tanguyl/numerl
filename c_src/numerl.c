@@ -87,6 +87,26 @@ ERL_NIF_TERM matrix_to_erl(ErlNifEnv* env, Matrix m){
     return enif_make_tuple4(env, atom_matrix, enif_make_int(env,m.n_rows), enif_make_int(env,m.n_cols), term);
 }
 
+int enif_is_matrix(ErlNifEnv* env, ERL_NIF_TERM term){
+    int arity;
+    const ERL_NIF_TERM* content;
+
+    if(!enif_is_tuple(env, term))
+        return 0;
+
+    enif_get_tuple(env, term, &arity, &content);
+    if(arity != 4)
+        return 0;
+    
+    if(content[0] != atom_matrix
+        || !enif_is_number(env, content[1])
+        || !enif_is_number(env, content[2])
+        || !enif_is_binary(env, content[3]))
+            
+            return 0;
+    return 1;
+}
+
 //Reads an erlang term as a matrix.
 //As such, no modifications can be made to the red matrix.
 //Returns true if it was possible to read a matrix, false otherwise
@@ -94,6 +114,9 @@ int enif_get_matrix(ErlNifEnv* env, ERL_NIF_TERM term, Matrix *dest){
     
     int arity;
     const ERL_NIF_TERM* content;
+
+    if(!enif_is_tuple(env, term))
+        return 0;
 
     enif_get_tuple(env, term, &arity, &content);
     if(arity != 4)
@@ -150,6 +173,21 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
     va_start(valist, format);
     int valid = 1;
 
+    
+    for(int i = 0; i < strlen(format) && valid; i++){
+        switch(format[i]){
+            case 'n':
+                if(!enif_is_number(env, erl_terms[i]))
+                    return 0;
+                break;
+            
+            case 'm':
+                if(!enif_is_matrix(env, erl_terms[i]))
+                    return 0;
+                break;
+        }
+    }
+
     while(valid && *format != '\0'){
         switch(*format++){
             case 'n':
@@ -172,26 +210,6 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
                 //Reads an int.
                 valid = enif_get_int(env, *erl_terms, va_arg(valist, int*));
                 break;
-
-            case 'v':
-                //Read vertical axis: triUpper, triLower.
-                //Set value to 1 if upper; 0 if lower; otherwise returns invalid.
-                valid = read_choice(env, *erl_terms, "triUpper", "triLower", (va_arg(valist, int*)));
-                break;
-                
-
-            case 'h':
-            //Read horizontal axis: left, right.
-            //Set value to 1 left 0 if right; otherwise returns invalid.
-                valid = read_choice(env, *erl_terms, "left", "right", (va_arg(valist, int*)));
-                break;
-
-            case 'u':
-                //Read unit: unitDiag, nonUnitDiag.
-                //Set value to 1 if unitDiag; 0 if nonUnitDiag; otherwise returns invalid.
-                valid = read_choice(env, *erl_terms, "unitDiag", "nonUnitDiag", (va_arg(valist, int*)));
-                break;
-
             
             default:
                 //Unknown type... give an error.
@@ -316,8 +334,9 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 //@return: true if arrays share content, false if they have different content || size..
 ERL_NIF_TERM nif_eq(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix a,b;
+
     if(!enif_get(env, argv, "mm", &a, &b))
-        return enif_make_badarg(env);
+        return atom_false;
 
     //Compare number of columns and rows
     if((a.n_cols != b.n_cols || a.n_rows != b.n_rows))
