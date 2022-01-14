@@ -20,3 +20,4 @@ doc
 c_src/*.o
 c_src/*.d
 priv/*.so
+.vscode/settings.json
