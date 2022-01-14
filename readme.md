@@ -2,7 +2,7 @@
 
 NumErl is a small API for matrix operations in Erlang.
 
-# Installation
+# Usage
 
 This project should be used as a rebar3 dependency:
 
@@ -10,16 +10,27 @@ This project should be used as a rebar3 dependency:
     {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
 ```
 
-The following packages are required:
+# Installation
+Assuming you have a working Erlang + rebar3 installation, you will need openblas:
 
+Ubuntu-like linux:
 ```sh
-    sudo apt-get install liblapacke-dev libgslcblas0 
+    sudo apt-get install openblas
 ```
 
+Mac:
+```sh
+    brew install openblas
+```
 
-# Matrix creation
+Windows:
+Isn't supported 'out of the box'; but can use Numerl trough WSL.
 
-Matrix are created the following ways:
+# API
+
+## Matrix creation
+
+Matrices are created the following ways:
 
 ```erlang
 L0 = numerl:list_to_matrix([[1, 2.0], [3, 4.0]]).
@@ -29,7 +40,7 @@ Zeros = numerl:zeros(2, 2).
 
 The eye and zero functions take as argument positive numbers; list\_to\_matrix takes a list of list of numbers (floats or ints).
 
-# Operators
+## Operators
 
 The following operators are implemented: comparison, addition, and multiplication.
 
@@ -42,7 +53,7 @@ Inv = numerl:inv(L0).
 Tr = numerl:transpose(L0).
 ```
 
-# Accessors
+## Accessors
 
 Access to elements / columns / rows of matrices is done as such:
 
@@ -58,7 +69,7 @@ The function print can be used to return an atom representation of a matrix.
 1> numerl:print(numerl:eye(2)).
 '[[1.00000 0.00000][0.00000 1.00000]]'
 ```
-# BLAS
+## BLAS
 
 BLAS are stardard, highly optimized functions used to compute operations between matrices and vectors. In numerl, vectors are simply matrices with at least one dimension of size 1:
 
@@ -101,3 +112,5 @@ dgemm returns the result of Alpha\*A\*B + Beta\*C. Alpha and Beta are numbers; A
 ```erlang
 GemmRes = numerl:dgemv(Alpha, A, B, Beta, C).
 ```
+
+Support for LAPACKE (dgesv) was temporarily dropped for easier OSX integration.

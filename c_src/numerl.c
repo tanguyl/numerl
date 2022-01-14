@@ -2,9 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h> 
-//#include <cblas.h>
-#include <gsl/gsl_cblas.h>
-#include <lapacke.h>
+#include <cblas.h>
 
 /*
 ----------------------------------------------------------------------------------------------------|
@@ -89,6 +87,26 @@ ERL_NIF_TERM matrix_to_erl(ErlNifEnv* env, Matrix m){
     return enif_make_tuple4(env, atom_matrix, enif_make_int(env,m.n_rows), enif_make_int(env,m.n_cols), term);
 }
 
+int enif_is_matrix(ErlNifEnv* env, ERL_NIF_TERM term){
+    int arity;
+    const ERL_NIF_TERM* content;
+
+    if(!enif_is_tuple(env, term))
+        return 0;
+
+    enif_get_tuple(env, term, &arity, &content);
+    if(arity != 4)
+        return 0;
+    
+    if(content[0] != atom_matrix
+        || !enif_is_number(env, content[1])
+        || !enif_is_number(env, content[2])
+        || !enif_is_binary(env, content[3]))
+            
+            return 0;
+    return 1;
+}
+
 //Reads an erlang term as a matrix.
 //As such, no modifications can be made to the red matrix.
 //Returns true if it was possible to read a matrix, false otherwise
@@ -96,6 +114,9 @@ int enif_get_matrix(ErlNifEnv* env, ERL_NIF_TERM term, Matrix *dest){
     
     int arity;
     const ERL_NIF_TERM* content;
+
+    if(!enif_is_tuple(env, term))
+        return 0;
 
     enif_get_tuple(env, term, &arity, &content);
     if(arity != 4)
@@ -110,35 +131,6 @@ int enif_get_matrix(ErlNifEnv* env, ERL_NIF_TERM term, Matrix *dest){
     }
 
     dest->content = (double*) (dest->bin.data);    
-    return 1;
-}
-
-//Equal all doubles
-//Compares wether all doubles are approximatively the same.
-int equal_ad(double* a, double* b, int size){
-    for(int i = 0; i<size; i++){
-        if(fabs(a[i] - b[i])> 1e-6)
-            return 0;
-    }
-    return 1;
-}
-
-int read_choice(ErlNifEnv* env, ERL_NIF_TERM term, char* option1, char* option2, int* dest){
-    unsigned len;
-    char buffer[30];
-
-   
-    if(!enif_get_atom_length(env, term, &len, ERL_NIF_LATIN1)
-            || len > 30
-            || ! enif_get_atom(env, term, buffer, 30, ERL_NIF_LATIN1))
-        return 0;
-
-    if(!strcmp(buffer, option1))
-        *dest = 1;
-    else if(!strcmp(buffer, option2))
-        *dest = 0;
-    else
-        return 0;
     return 1;
 }
 
@@ -174,26 +166,6 @@ int enif_get(ErlNifEnv* env, const ERL_NIF_TERM* erl_terms, const char* format, 
                 //Reads an int.
                 valid = enif_get_int(env, *erl_terms, va_arg(valist, int*));
                 break;
-
-            case 'v':
-                //Read vertical axis: triUpper, triLower.
-                //Set value to 1 if upper; 0 if lower; otherwise returns invalid.
-                valid = read_choice(env, *erl_terms, "triUpper", "triLower", (va_arg(valist, int*)));
-                break;
-                
-
-            case 'h':
-            //Read horizontal axis: left, right.
-            //Set value to 1 left 0 if right; otherwise returns invalid.
-                valid = read_choice(env, *erl_terms, "left", "right", (va_arg(valist, int*)));
-                break;
-
-            case 'u':
-                //Read unit: unitDiag, nonUnitDiag.
-                //Set value to 1 if unitDiag; 0 if nonUnitDiag; otherwise returns invalid.
-                valid = read_choice(env, *erl_terms, "unitDiag", "nonUnitDiag", (va_arg(valist, int*)));
-                break;
-
             
             default:
                 //Unknown type... give an error.
@@ -298,7 +270,6 @@ ERL_NIF_TERM nif_matrix_print(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[
 //@arg 2: int, coord n: col
 //@return: double, at cord Matrix(m,n).
 ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
-    ErlNifBinary bin;
     int m,n;
     Matrix matrix;
 
@@ -314,13 +285,25 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 
+
+//Equal all doubles
+//Compares wether all doubles are approximatively the same.
+int equal_ad(double* a, double* b, int size){
+    for(int i = 0; i<size; i++){
+        if(fabs(a[i] - b[i])> 1e-6)
+            return 0;
+    }
+    return 1;
+}
+
 //@arg 0: Array.
 //@arg 1: Array.
 //@return: true if arrays share content, false if they have different content || size..
 ERL_NIF_TERM nif_eq(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix a,b;
+
     if(!enif_get(env, argv, "mm", &a, &b))
-        return enif_make_badarg(env);
+        return atom_false;
 
     //Compare number of columns and rows
     if((a.n_cols != b.n_cols || a.n_rows != b.n_rows))
@@ -717,46 +700,6 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     return matrix_to_erl(env, nC);
 }
 
-
-
-//Arguments: A,B.
-//Finds matrix X such that A*X = B.
-ERL_NIF_TERM nif_dgesv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix A,B;
-
-    if(!enif_get(env, argv, "mm", &A, &B)
-            || A.n_rows != A.n_cols
-            || B.n_rows != A.n_rows){
-        return enif_make_badarg(env);
-    }
-
-    int n = A.n_rows;
-    Matrix nA = matrix_dup(A);
-    Matrix nB = matrix_dup(B);
-    int* ipiv = enif_alloc(sizeof(int)*n);
-
-    int error = LAPACKE_dgesv(LAPACK_ROW_MAJOR, n, nB.n_cols, nA.content, n, ipiv, nB.content, nB.n_rows);
-
-    if(!error){
-        //CORRECT THIS SHIT RIGHT HERE
-        int in_place = 1;
-        for(int i = 0; i<n && in_place; i++)
-            if(!ipiv[i] != i)
-                in_place = 0;
-        
-        if(in_place)
-            return enif_make_badarg(env);
-                
-        return matrix_to_erl(env, nB);
-    }
-    else if (error < 0){
-        return enif_make_badarg(env);
-    }
-    else{
-        return enif_make_atom(env, "Invalid LAPACKE argument.\n");
-    }
-}
-
 ErlNifFunc nif_funcs[] = {
     {"matrix", 1, nif_matrix},
     {"print", 1, nif_matrix_print},
@@ -777,8 +720,7 @@ ErlNifFunc nif_funcs[] = {
     {"ddot", 3, nif_ddot},
     {"daxpy", 4, nif_daxpy},
     {"dgemv", 5, nif_dgemv},
-    {"dgemm", 5, nif_dgemm},
-    {"dgesv", 2, nif_dgesv}
+    {"dgemm", 5, nif_dgemm}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, upgrade, NULL)
