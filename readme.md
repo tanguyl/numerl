@@ -33,7 +33,7 @@ Isn't supported 'out of the box'; but can use Numerl trough WSL.
 Matrices are created the following ways:
 
 ```erlang
-L0 = numerl:list_to_matrix([[1, 2.0], [3, 4.0]]).
+L0 = numerl:matrix([[1, 2.0], [3, 4.0]]).
 Eye = numerl:eye(2).
 Zeros = numerl:zeros(2, 2).
 ```
