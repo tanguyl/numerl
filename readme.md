@@ -11,14 +11,14 @@ This project should be used as a rebar3 dependency:
 ```
 
 # Installation
-Assuming you have a working Erlang + rebar3 installation, you will need openblas:
+Assuming you have a working Erlang + rebar3 installation, you will need openblas and lapacke:
 
 Ubuntu-like linux:
 ```sh
-    sudo apt-get install libopenblas-dev
+    sudo apt-get install libopenblas-dev liblapacke-dev
 ```
 
-Mac:
+Mac: lapacke should be usable via the accelerate framework; only openblas is required.
 ```sh
     brew install openblas
 ```
