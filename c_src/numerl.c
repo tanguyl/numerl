@@ -3,13 +3,27 @@
 #include <string.h>
 #include <math.h> 
 #include <cblas.h>
+//#include <lapacke.h>
+
 
 /*
-----------------------------------------------------------------------------------------------------|
-                        ------------------------------------------                                  |
-                        |               INIT FC                  |                                  |
-                        ------------------------------------------                                  |
-----------------------------------------------------------------------------------------------------|
+--------------------------------------------------------------------|
+            ------------------------------                          |
+            |          LAPACKE           |                          |
+            ------------------------------                          |
+--------------------------------------------------------------------|
+*/
+
+void dgetrf_(int* M, int *N, double* A, int* lda, int* IPIV, int* INFO);
+void dgetri_(int* N, double* A, int* lda, int* IPIV, double* WORK, int* lwork, int* INFO);
+
+
+/*
+--------------------------------------------------------------------|
+            ------------------------------                          |
+            |           INIT FC          |                          |
+            ------------------------------                          |
+--------------------------------------------------------------------|
 */
 
 
@@ -76,7 +90,7 @@ Matrix matrix_dup(Matrix m){
 }
 
 //Free an allocated matrix that was not sent back to Erlang.
-void free_matrix(Matrix m){
+void matrix_free(Matrix m){
     enif_release_binary(&m.bin);
 }
 
@@ -229,9 +243,45 @@ ERL_NIF_TERM nif_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 #define PRECISION 10
-//Arg0: a valid matrix.
-//Returns: an atom representation of the input matrix.
-ERL_NIF_TERM matrix_to_atom(ErlNifEnv *env, Matrix m){
+
+//Used for debug purpose.
+void debug_write(char info[]){
+    FILE* fp = fopen("debug.txt", "a");
+    fprintf(fp, info);
+    fprintf(fp, "\n");
+    fclose(fp);
+}
+
+void debug_write_matrix(Matrix m){
+    char *content = enif_alloc(sizeof(char)*((2*m.n_cols-1)*m.n_rows*PRECISION + m.n_rows*2 + 3));
+    content[0] = '[';
+    content[1] = '\0';
+    char converted[PRECISION];
+
+    for(int i=0; i<m.n_rows; i++){
+        strcat(content, "[");
+        for(int j = 0; j<m.n_cols; j++){
+            snprintf(converted, PRECISION-1, "%.5lf", m.content[i*m.n_cols+j]);
+            strcat(content, converted);
+            if(j != m.n_cols-1)
+                strcat(content, " ");
+        }
+        strcat(content, "]");
+    }
+    strcat(content, "]");
+    debug_write(content);
+    enif_free(content);
+
+}
+
+//@arg 0: Matrix.
+//@return Nothing.
+ERL_NIF_TERM nif_matrix_print(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix m;
+    
+    if(!enif_get(env, argv, "m", &m))
+        return enif_make_badarg(env);
+
     char *content = enif_alloc(sizeof(char)*((2*m.n_cols-1)*m.n_rows*PRECISION + m.n_rows*2 + 3));
     content[0] = '[';
     content[1] = '\0';
@@ -252,16 +302,6 @@ ERL_NIF_TERM matrix_to_atom(ErlNifEnv *env, Matrix m){
     ERL_NIF_TERM result = enif_make_atom(env, content);
     enif_free(content);
     return result;
-}
-
-//@arg 0: Matrix.
-//@return Nothing.
-ERL_NIF_TERM nif_matrix_print(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-   
-    Matrix m;
-    if(!enif_get(env, argv, "m", &m))
-        return enif_make_badarg(env);
-    return matrix_to_atom(env, m);
 }
 
 
@@ -501,7 +541,7 @@ ERL_NIF_TERM _nif_mult_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[
         }
     }
 
-    free_matrix(b_tr);
+    matrix_free(b_tr);
 
     return matrix_to_erl(env, result);
 }
@@ -525,73 +565,35 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     if(!enif_get_matrix(env, argv[0], &a))
         return enif_make_badarg(env);
 
-    if(a.n_cols != a.n_rows){
-        return atom_nok;
-    }
-    int n_cols = 2*a.n_cols;
+    Matrix inv = matrix_dup(a);
+    debug_write_matrix(a);
 
-    double* gj = (double*) enif_alloc(n_cols*a.n_rows*sizeof(double));
-    for(int i=0; i<a.n_rows; i++){
-        memcpy(gj+i*n_cols, a.content+i*a.n_cols, sizeof(double)*a.n_cols);
-        memset(gj+i*n_cols + a.n_cols, 0, sizeof(double)*a.n_cols);
-        gj[i*n_cols + a.n_cols + i] = 1.0;
-    }
+    int N = a.n_rows;
+    int *IPIV = enif_alloc(sizeof(int)*N);
+    int LWORK = N*N;
+    double* WORK = enif_alloc(sizeof(int)*N*N);
+    int INFO1, INFO2;
 
-    //Elimination de Gauss Jordan:
-    //https://fr.wikipedia.org/wiki/%C3%89limination_de_Gauss-Jordan
-   
-    //Row of last found pivot
-    int r = -1;
-    //j for all indexes of column
-    for(int j=0; j<a.n_cols; j++){
+    dgetrf_(&N,&N,inv.content,&N,IPIV,&INFO1);
+    dgetri_(&N,inv.content,&N,IPIV,WORK,&LWORK,&INFO2);
 
-        //Find the row of the maximum in column j
-        int pivot_row = -1;
-        for(int cur_row=r; cur_row<a.n_rows; cur_row++){
-            if(pivot_row<0 || fabs(gj[cur_row*n_cols + j]) > fabs(gj[pivot_row*n_cols+j])){
-                pivot_row = cur_row;
-            }
-        }
-        double pivot_value = gj[pivot_row*n_cols+j];
-
-        if(pivot_value != 0){
-            r++;
-            for(int cur_col=0; cur_col<n_cols; cur_col++){
-                gj[cur_col+pivot_row*n_cols] /= pivot_value;
-            }
-            gj[pivot_row*n_cols + j] = 1.0; //make up for rounding errors
-
-            //Do we need to swap?
-            if(pivot_row != r){
-                for(int i = 0; i<n_cols; i++){
-                    double cpy = gj[pivot_row*n_cols+i];
-                    gj[pivot_row*n_cols+i]= gj[r*n_cols+i];
-                    gj[r*n_cols+i] = cpy;
-                }
-            }
-
-            //We can simplify all the rows
-            for(int i=0; i<a.n_rows; i++){
-                if(i!=r){
-                    double factor = gj[i*n_cols+j];
-                    for(int col=0; col<n_cols; col++){
-                        gj[col+i*n_cols] -= gj[col+r*n_cols]*factor;
-                    }
-                    gj[i*n_cols+j] = 0.0;    //make up for rounding errors
-                }
-            }
-        }
-
-    }
     
-    Matrix inv = matrix_alloc(a.n_rows, a.n_cols);
-    for(int l=0; l<inv.n_rows; l++){
-        int line_start = l*n_cols + a.n_cols;
-        memcpy(inv.content + inv.n_cols*l, gj + line_start, sizeof(double)*inv.n_cols);
-    }
+    enif_free(IPIV);
+    enif_free(WORK);
+    ERL_NIF_TERM result;
 
-    enif_free(gj);
-    return matrix_to_erl(env, inv);
+    if(INFO1 > 0 || INFO2 > 0){
+        result = enif_raise_exception(env, enif_make_atom(env, "nif_inv: could not invert singular matrix."));
+        matrix_free(inv);
+    }
+    else if(INFO1 < 0 || INFO2 < 0){
+        result = enif_raise_exception(env, enif_make_atom(env, "nif_inv: LAPACK error."));
+        matrix_free(inv);
+    }
+    else result = matrix_to_erl(env, inv);
+
+
+    return result;
 }
 
 //----------------------------------------------------------------------------------------------------|

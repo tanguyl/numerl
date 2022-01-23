@@ -15,7 +15,7 @@ Assuming you have a working Erlang + rebar3 installation, you will need openblas
 
 Ubuntu-like linux:
 ```sh
-    sudo apt-get install openblas
+    sudo apt-get install libopenblas-dev
 ```
 
 Mac:
