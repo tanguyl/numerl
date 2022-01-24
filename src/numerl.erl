@@ -19,7 +19,7 @@ init()->
 
 %Creates a random matrix.
 rnd_matrix(N)->
-    L = [[random:uniform(20) || _ <- lists:seq(1,N) ] || _ <- lists:seq(1,N)],
+    L = [[rand:uniform(20) || _ <- lists:seq(1,N) ] || _ <- lists:seq(1,N)],
     matrix(L).
 
 %%Creates a matrix.

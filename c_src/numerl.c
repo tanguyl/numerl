@@ -566,7 +566,6 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
 
     Matrix inv = matrix_dup(a);
-    debug_write_matrix(a);
 
     int N = a.n_rows;
     int *IPIV = enif_alloc(sizeof(int)*N);
