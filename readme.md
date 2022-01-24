@@ -4,7 +4,7 @@ NumErl is a small API for matrix operations in Erlang.
 
 # Usage
 
-This project should be used as a rebar3 dependency:
+This project is designed as a rebar3 dependency (https://github.com/erlang/rebar3): add the following dependency.
 
 ```erlang
     {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
@@ -18,7 +18,7 @@ Ubuntu-like linux:
     sudo apt-get install libopenblas-dev liblapacke-dev
 ```
 
-Mac: lapacke should be usable via the accelerate framework; only openblas is required.
+OSX: lapacke is used trough the accelerate framework; only openblas is required.
 ```sh
     brew install openblas
 ```
