@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, matrix/1, get/3, row/2, col/2, transpose/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dgemm/5]).
+-export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, matrix/1, rnd_matrix/1, get/3, row/2, col/2, transpose/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dgemm/5]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -16,6 +16,11 @@ init()->
           end,
     SoName = filename:join(Dir, atom_to_list(?MODULE)),
     erlang:load_nif(SoName, 0).
+
+%Creates a random matrix.
+rnd_matrix(N)->
+    L = [[rand:uniform(20) || _ <- lists:seq(1,N) ] || _ <- lists:seq(1,N)],
+    matrix(L).
 
 %%Creates a matrix.
 %List: List of doubles, of length N.

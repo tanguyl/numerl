@@ -119,10 +119,14 @@ tr_test() ->
     CM1 = numerl:transpose(CM2).
 
 inv_test() ->
-    M = numerl:matrix([[2.0, -1.0, 0.0], [-1.0, 2.0, -1.0], [0.0, -1.0, 2.0]]),
-    M_inv = numerl:inv(M),
-    io:fwrite(numerl:print(M_inv),[]),
-    true = numerl:equals(numerl:dot(M, M_inv), numerl:eye(3)).
+    F = fun()->
+        N = rand:uniform(20),
+        M = numerl:rnd_matrix(N),
+        M_inv = numerl:inv(M),
+        numerl:equals(numerl:dot(M, M_inv), numerl:eye(N))
+    end,
+    List = [F() || _ <- lists:seq(1,50)],
+    lists:all(fun(_)-> true end, List).
 
 ddot_test() ->
     Incs = numerl:matrix([[1, 2, 3, 4]]),
