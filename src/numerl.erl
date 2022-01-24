@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, matrix/1, rnd_matrix/1, get/3, row/2, col/2, transpose/1, inv/1, print/1, ddot/3, daxpy/4, dgemv/5, dgemm/5]).
+-export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, divide/2, matrix/1, rnd_matrix/1, get/3, row/2, col/2, transpose/1, inv/1, print/1, dnrm2/1, ddot/2, daxpy/4, dgemv/5, dgemm/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -59,13 +59,17 @@ sub(_, _) ->
 
 
 %% Matrix multiplication.
-dot(A,B) when is_number(A) -> '*_num'(A,B);
+dot(A,B) when is_number(B) -> '*_num'(A,B);
 dot(A,B) -> '*_matrix'(A,B).
 
 '*_num'(_,_)->
     nif_not_loaded.
 
 '*_matrix'(_, _)->
+    nif_not_loaded.
+
+%Matrix division by a number
+divide(_,_)->
     nif_not_loaded.
 
 
@@ -92,13 +96,18 @@ inv(_)->
 
 %------CBLAS--------
 
+%dnrm2
+%Calculates the squared root of the sum of the contents.
+dnrm2(_)->
+    nif_not_loaded.
+
 % ddot: dot product of two vectors
 % Arguments: int n, vector x, vector y.
 %   n is the number of coordinates we should take into account (n < min(len(x), len(y)).
 %   x and y are matrices, with one of their dimension equal to 1.
 % Returns the result of the dot product of the first N coordinates of x, y.
 % The returned vector is in the same dimension of y (column or row).
-ddot(_,_, _)->
+ddot(_, _)->
     nif_not_loaded.
 
 % daxpy: alpha*x + y
@@ -126,5 +135,5 @@ dgemv(_,_,_,_,_)->
 %   alpha, beta: numbers (float or ints) used as doubles.
 %   A,B,C: matrices.
 % Returns the matrice resulting of the operations alpha * A * B + beta * C.
-dgemm(_,_,_,_,_)->
+dgemm(_,_)->
     nif_not_loaded.

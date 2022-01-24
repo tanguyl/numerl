@@ -86,9 +86,9 @@ eye_test() ->
 
 mult_num_test()->
     M0 = numerl:matrix([[1.0, 2.0]]),
-    true = numerl:equals(numerl:matrix([[2,4]]), numerl:dot(2, M0)),
-    true = numerl:equals(numerl:matrix([[0,0]]), numerl:dot(0, M0)),
-    true = numerl:equals(numerl:matrix([[-1, -2]]), numerl:dot(-1, M0)).
+    true = numerl:equals(numerl:matrix([[2,4]]), numerl:dot(M0, 2)),
+    true = numerl:equals(numerl:matrix([[0,0]]), numerl:dot(M0, 0)),
+    true = numerl:equals(numerl:matrix([[-1, -2]]), numerl:dot(M0, -1)).
 
 mult_matrix_test() ->
     CM0 = numerl:eye(2),
@@ -101,12 +101,9 @@ mult_matrix_test() ->
     true = numerl:equals(CM5, numerl:dot(CM1, CM3)),
     true = numerl:equals(CM6 ,numerl:dot(CM4, CM1)).
 
-mult_matrix_num_test() ->
-    M0 = [[1.0, 2.0, 3.0]],
-    CR0 = numerl:matrix([[2, 4, 6]]),
-    CR = numerl:dot(2.0, numerl:matrix(M0)),
-    true = numerl:equals(CR0, CR).
-
+div_test()->
+    M0 = numerl:matrix([[1,2,3]]),
+    true = numerl:equals(numerl:divide(M0,2), numerl:matrix([[0.5, 1, 1.5]])).
 
 
 tr_test() ->
@@ -128,13 +125,14 @@ inv_test() ->
     List = [F() || _ <- lists:seq(1,50)],
     lists:all(fun(_)-> true end, List).
 
+
+
 ddot_test() ->
     Incs = numerl:matrix([[1, 2, 3, 4]]),
     Ones = numerl:matrix([[1], [1], [1], [1]]),
-    10.0 = numerl:ddot(4, Incs, Ones),
-    30.0 = numerl:ddot(4, Incs, Incs),
-    4.0 = numerl:ddot(4, Ones, Ones),
-    1.0 = numerl:ddot(1, Incs, Ones).
+    10.0 = numerl:ddot(Incs, Ones),
+    30.0 = numerl:ddot(Incs, Incs),
+    4.0 = numerl:ddot(Ones, Ones).
 
 daxpy_test()->
     Ones = numerl:matrix([[1, 1, 1, 1]]),
@@ -150,5 +148,4 @@ dgemv_test()->
 dgemm_test()->
     A = numerl:matrix([[1,2]]),
     B = numerl:matrix([[3,4], [5,6]]),
-    C = numerl:matrix([[10, 12]]),
-    true = numerl:equals(numerl:matrix([[31, 38]]), numerl:dgemm(2,A,B,0.5,C)).
+    true = numerl:equals(numerl:matrix([[13, 16]]), numerl:dgemm(A,B)).

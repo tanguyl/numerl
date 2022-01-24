@@ -3,7 +3,6 @@
 #include <string.h>
 #include <math.h> 
 #include <cblas.h>
-//#include <lapacke.h>
 
 
 /*
@@ -500,13 +499,32 @@ ERL_NIF_TERM nif_mult_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     double a;
     Matrix b;
-    if(!enif_get(env, argv, "nm", &a, &b))
+    if(!enif_get(env, argv, "mn", &b, &a))
         return enif_make_badarg(env);
 
     Matrix c = matrix_alloc(b.n_rows, b.n_cols);
 
     for(int i = 0; i<b.n_cols*b.n_rows; i++){
         c.content[i] = a * b.content[i];
+    }
+
+    return matrix_to_erl(env, c);
+}
+
+//arg 0: double or int
+//arg 1: Matrix
+//@return the result of multiplying each matrix element by arg 0.
+ERL_NIF_TERM nif_div_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+
+    double a;
+    Matrix b;
+    if(!enif_get(env, argv, "mn", &b, &a))
+        return enif_make_badarg(env);
+
+    Matrix c = matrix_alloc(b.n_rows, b.n_cols);
+
+    for(int i = 0; i<b.n_cols*b.n_rows; i++){
+        c.content[i] = b.content[i] / a;
     }
 
     return matrix_to_erl(env, c);
@@ -602,19 +620,31 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 //----------------------------------------------------------------------------------------------------|
 //Some CBLAS wrappers.
 
+//Calculates the norm of input vector/matrix, aka the square root of the sum of its composants.
+ERL_NIF_TERM nif_dnrm2(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix x;
 
-//Performs blas_ddot
-//Input: two vectors (matrices containing either one row or one column).
-ERL_NIF_TERM nif_ddot(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix x,y;
-    int n;
-
-    if(!enif_get(env, argv, "imm", &n, &x, &y)){
+    if(!enif_get(env, argv, "m", &x)){
         return enif_make_badarg(env);
     }
 
-    if(fmin(x.n_rows, x.n_cols) * fmin(y.n_rows, y.n_cols) != 1){
-        //We are not using vectors...
+    double result = cblas_dnrm2(x.n_cols*x.n_rows, x.content, 1);
+
+    return enif_make_double(env, result);
+}
+
+
+//Performs blas_ddot
+//Input: two vectors / matrices
+ERL_NIF_TERM nif_ddot(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix x,y;
+
+    if(!enif_get(env, argv, "mm", &x, &y)){
+        return enif_make_badarg(env);
+    }
+
+    int n = fmin(x.n_rows*x.n_cols, y.n_rows*y.n_cols);
+    if(n <= 0){
         return enif_make_badarg(env);
     }
 
@@ -679,26 +709,24 @@ ERL_NIF_TERM nif_dgemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 //Arguments: double alpha, matrix A, matrix B, double beta, matrix C
 ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix A, B, C;
-    double alpha;
-    double beta;
+    Matrix A, B;
+    double alpha = 1.0;
+    double beta = 0.0;
 
-    if(!enif_get(env, argv, "nmmnm", &alpha, &A, &B, &beta, &C)
-            || A.n_rows != C.n_rows 
-            || B.n_cols != C.n_cols 
+    if(!enif_get(env, argv, "mm", &A, &B)
             || A.n_cols != B.n_rows){
 
         return enif_make_badarg(env);
     }
-
-    Matrix nC = matrix_dup(C);
+    
+    Matrix C = matrix_alloc(A.n_rows, B.n_cols);
 
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
     A.n_rows, B.n_cols, A.n_cols,
     alpha, A.content, A.n_cols, B.content, B.n_rows, 
-    beta, nC.content, nC.n_cols);
+    1.0, C.content, C.n_cols);
 
-    return matrix_to_erl(env, nC);
+    return matrix_to_erl(env, C);
 }
 
 ErlNifFunc nif_funcs[] = {
@@ -714,14 +742,16 @@ ErlNifFunc nif_funcs[] = {
     {"eye", 1, nif_eye},
     {"*_matrix", 2, _nif_mult_matrix},
     {"*_num", 2, nif_mult_num},
+    {"divide", 2, nif_div_num},
     {"transpose", 1, nif_tr},
     {"inv", 1, nif_inv},
     
     //--- BLAS----------
-    {"ddot", 3, nif_ddot},
+    {"dnrm2", 1, nif_dnrm2},
+    {"ddot", 2, nif_ddot},
     {"daxpy", 4, nif_daxpy},
     {"dgemv", 5, nif_dgemv},
-    {"dgemm", 5, nif_dgemm}
+    {"dgemm", 2, nif_dgemm}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, upgrade, NULL)
