@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, divide/2, matrix/1, rnd_matrix/1, get/3, row/2, col/2, transpose/1, inv/1, print/1, dnrm2/1, ddot/2, daxpy/4, dgemv/5, dgemm/2]).
+-export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, divide/2, matrix/1, rnd_matrix/1, get/3, at/2, row/2, col/2, transpose/1, inv/1, print/1, dnrm2/1, ddot/2, daxpy/4, dgemv/5, dgemm/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -26,6 +26,10 @@ rnd_matrix(N)->
 %List: List of doubles, of length N.
 %Return: a matrix of dimension MxN, containing the data.
 matrix(_) ->
+    nif_not_loaded.
+
+%%Returns the Nth value contained within Matrix.
+at(_Matrix,_Nth)->
     nif_not_loaded.
 
 %%Returns a value from a matrix.

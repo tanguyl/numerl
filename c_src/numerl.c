@@ -323,6 +323,19 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     return enif_make_double(env, matrix.content[index]);
 }
 
+ERL_NIF_TERM nif_at(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
+    int n;
+    Matrix matrix;
+
+    if(!enif_get(env, argv, "mi", &matrix, &n))
+        return enif_make_badarg(env);
+    n--;
+
+    if( n < 0 || n >= matrix.n_cols * matrix.n_rows)
+        return enif_make_badarg(env);
+
+    return enif_make_double(env, matrix.content[n]);
+}
 
 
 //Equal all doubles
@@ -733,6 +746,7 @@ ErlNifFunc nif_funcs[] = {
     {"matrix", 1, nif_matrix},
     {"print", 1, nif_matrix_print},
     {"get", 3, nif_get},
+    {"at", 2, nif_at},
     {"equals", 2, nif_eq},
     {"row", 2, nif_row},
     {"col", 2, nif_col},

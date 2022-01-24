@@ -26,6 +26,9 @@ get_test() ->
     V10 = 3.0,
     V10 = numerl:get(2,1, CM0).
 
+at_test()->
+    0.0 = numerl:at(numerl:matrix([[1,0]]), 2),
+    2.0 = numerl:at(numerl:matrix([[2,3,4]]), 1).
 
 equal_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
