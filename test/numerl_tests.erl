@@ -179,7 +179,7 @@ memleak_test()->
     erlang:garbage_collect(),
     {memory, M_second_run} = erlang:process_info(self(), memory),
 
-    0 =< M_second_run - M_first_run.
+    M_first_run >= M_second_run.
 
 
     
