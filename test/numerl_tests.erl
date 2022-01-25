@@ -60,21 +60,6 @@ col_test() ->
     CC0 = numerl:matrix(C0),
     true = numerl:equals(CC0, numerl:col(2, CM0)).
 
-plus_test()->
-     M0 = [[1.0, 2.0], [3.0, 4.0]],
-     M1 = [[2.0, 4.0], [6.0, 8.0]],
-     CM0 = numerl:matrix(M0),
-     CM1 = numerl:matrix(M1),
-     CM0p = numerl:add(CM0, CM0),
-     true = numerl:equals(CM1, CM0p).
-
-minus_test()->
-     M0 = [[1, 2], [3, 4]],
-     M1 = [[0, 0], [0, 0]],
-     CM0 = numerl:matrix(M0),
-     CM1 = numerl:matrix(M1),
-     CM0p = numerl:sub(CM0, CM0),
-     true = numerl:equals(CM1, CM0p).
 
 zero_test() ->
     CM0 = numerl:zeros(1,5),
@@ -88,21 +73,52 @@ eye_test() ->
     M0 = numerl:get(2,2,CM0),
     M0 = numerl:get(4,4,CM0).
 
-mult_num_test()->
-    M0 = numerl:matrix([[1.0, 2.0]]),
-    true = numerl:equals(numerl:matrix([[2,4]]), numerl:mult(M0, 2)),
-    true = numerl:equals(numerl:matrix([[0,0]]), numerl:mult(M0, 0)),
-    true = numerl:equals(numerl:matrix([[-1, -2]]), numerl:mult(M0, -1)).
 
-mult_matrix_test() ->
-    CM1 = numerl:matrix([[1, 2, 3]]),
-    CM2 = numerl:matrix([[2, 1, 1]]),
-    CM3 = numerl:matrix([[2, 2, 3]]),
-    true = numerl:equals(CM3, numerl:mult(CM1, CM2)).
+add_test()->
+     CM0 = numerl:matrix([[1, 2], [3, 4]]),
+     CM1 = numerl:matrix([[2, 4], [6, 8]]),
+     CM3 = numerl:matrix([[2, 3], [4, 5]]),
+     true = numerl:equals(CM1, numerl:add(CM0, CM0)),
+     true = numerl:equals(CM3, numerl:add(CM0,1)).
 
-div_test()->
-    M0 = numerl:matrix([[1,2,3]]),
-    true = numerl:equals(numerl:divide(M0,2), numerl:matrix([[0.5, 1, 1.5]])).
+
+sub_test()->
+     CM0 = numerl:matrix([[1, 2], [3, 4]]),
+     CM1 = numerl:matrix([[2, 4], [6, 8]]),
+     CM3 = numerl:matrix([[-1, -2], [-3, -4]]),
+     CM4 = numerl:matrix([[0, 1], [2, 3]]),
+     true = numerl:equals(CM3, numerl:sub(CM0, CM1)),
+     true = numerl:equals(CM4, numerl:sub(CM0,1)).
+
+mult_test()->
+    CM0 = numerl:matrix([[1, 2], [3, 4]]),
+    CM1 = numerl:matrix([[2, 4], [6, 8]]),
+    CM3 = numerl:matrix([[2, 8], [18, 32]]),
+    CM4 = numerl:matrix([[2, 4], [6, 8]]),
+    true = numerl:equals(CM3, numerl:mult(CM0, CM1)),
+    true = numerl:equals(CM4, numerl:mult(CM0,2)).
+
+divide_test()->
+    CM0 = numerl:matrix([[1, 2], [3, 4]]),
+    CM1 = numerl:matrix([[2, 4], [6, 8]]),
+    CM3 = numerl:matrix([[0.5, 0.5], [0.5, 0.5]]),
+    CM4 = numerl:matrix([[0.5, 1], [1.5, 2]]),
+    true = numerl:equals(CM3, numerl:divide(CM0, CM1)),
+    true = numerl:equals(CM4, numerl:divide(CM0,2)),
+    badarg_error = 
+    try
+        numerl:divide(numerl:matrix([[1]]), 0),
+        no_error
+    catch 
+        error:badarg -> badarg_error
+    end,
+    badarg_error = 
+    try
+        numerl:divide(numerl:matrix([[1],[2]]), numerl:matrix([[1],[0]])),
+        no_error
+    catch 
+        error:badarg -> badarg_error
+    end.
 
 
 tr_test() ->
@@ -139,7 +155,7 @@ dot_test()->
     true = numerl:equals(numerl:matrix([[13, 16]]), numerl:dot(A,B)).
 
 memleak_test()->
-    %For input matrices of size 10: run all function once, check memory, run 5 more times, check if memory increase.
+    %For input matrices of size 10: run all function once, check memory, run a couple more times, check if memory increase.
     N = 10,
     AllFcts = fun()->
         M = numerl:rnd_matrix(N),
@@ -148,9 +164,12 @@ memleak_test()->
         _ = numerl:mtfl(M),
         _ = numerl:equals(M,M),
         _ = numerl:add(M,M),
+        _ = numerl:add(M,2),
         _ = numerl:sub(M,M),
+        _ = numerl:sub(M,2),
         _ = numerl:mult(M,M),
-        _ = numerl:mult(M,1),
+        _ = numerl:mult(M,2),
+        _ = numerl:divide(M,M),
         _ = numerl:divide(M,2),
         _ = numerl:transpose(M),
         _ = numerl:inv(M),
