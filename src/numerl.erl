@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eval/1, eye/1, zeros/2, equals/2, add/2, sub/2,mult/2, divide/2, matrix/1, rnd_matrix/1, get/3, at/2, mtfli/1, row/2, col/2, transpose/1, inv/1, print/1, dnrm2/1, ddot/2, daxpy/4, dgemv/5, dot/2]).
+-export([ eval/1, eye/1, zeros/2, equals/2, add/2, sub/2,mult/2, divide/2, matrix/1, rnd_matrix/1, get/3, at/2, mtfli/1, mtfl/1, row/2, col/2, transpose/1, inv/1, nrm2/1, vec_dot/2, dot/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -41,6 +41,10 @@ at(_Matrix,_Nth)->
 
 %%Returns the matrix as a flattened list of ints.
 mtfli(_mtrix)->
+    nif_not_loaded.
+
+%%Returns the matrix as a flattened list of doubles.
+mtfl(_mtrix)->
     nif_not_loaded.
 
 %%Returns a value from a matrix.
@@ -95,10 +99,6 @@ zeros(_, _) ->
 eye(_)->
     nif_not_loaded.
 
-%%Print in stdout the matrix's content.
-print(_)->
-    nif_not_loaded.
-
 %Returns the transpose of the given square matrix.
 transpose(_)->
     nif_not_loaded.
@@ -110,42 +110,20 @@ inv(_)->
 
 %------CBLAS--------
 
-%dnrm2
+%nrm2
 %Calculates the squared root of the sum of the squared contents.
-dnrm2(_)->
+nrm2(_)->
     nif_not_loaded.
 
-% ddot: dot product of two vectors
+% : dot product of two vectors
 % Arguments: vector x, vector y.
-%   n is the number of coordinates we should take into account (n < min(len(x), len(y)).
-%   x and y are matrices, with one of their dimension equal to 1.
+%   x and y are matrices
 % Returns the dot product of all the coordinates of X,Y.
-% The returned vector is in the same dimension of y (column or row).
-ddot(_, _)->
+vec_dot(_, _)->
     nif_not_loaded.
 
-% daxpy: alpha*x + y
-% Arguments: int n, number alpha, vector x, vector y.
-%   n is the number of coordinates we should take into account (n < min(len(x), len(y)).
-%   alpha is a number, converted to a double.
-%   x and y are matrices, with one of their dimension equal to 1.
-% Returns the result of the operation alpha*x + y.
-% The returned vector is in the same dimension of y (column or row).
-daxpy(_,_,_,_)->
-    nif_not_loaded.
-
-% dgemv: alpha*A*x + beta*y
-% Arguments: number alpha, Matrix A, vector x, number beta, vector y.
-%   alpha and beta re a numbers, converted to doubles.
-%   A is a Matrix.
-%   x and y are matrices, with one of their dimension equal to 1.
-% Returns the result of the operation alpha*A*x + beta*y.
-% The returned vector is in the same dimension of y (column or row).
-dgemv(_,_,_,_,_)->
-    nif_not_loaded.
-
-% dgemm: alpha * A * B + beta * C.
-% Arguments: number alpha, Matrix A, Matrix B, number beta, matrix C.
+% dgemm: A dot B 
+% Arguments: Matrix A, Matrix B.
 %   alpha, beta: numbers (float or ints) used as doubles.
 %   A,B,C: matrices.
 % Returns the matrice resulting of the operations alpha * A * B + beta * C.

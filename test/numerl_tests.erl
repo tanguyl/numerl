@@ -5,10 +5,6 @@ matrix_test() ->
     M0 = [[1.0, 0.0], [0.0, 1.0]],
     _ = numerl:matrix(M0).
 
-print_test() ->
-    M0 = numerl:matrix([[1.0/3.0, 0.0], [0.0, 1.0/3.0]]),
-    numerl:print(M0).
-
 get_test() ->
     %Testing access on square matrix
     M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -31,6 +27,9 @@ at_test()->
 
 mtfli_test()->
     [1,2,3] = numerl:mtfli(numerl:matrix([[1.1, 2.9, 3]])).
+
+mtfl_test()->
+    [1.1,2.1,3.4] = numerl:mtfl(numerl:matrix([[1.1, 2.1, 3.4]])).
 
 equal_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -127,23 +126,12 @@ inv_test() ->
 
 
 
-ddot_test() ->
+vec_dot_test() ->
     Incs = numerl:matrix([[1, 2, 3, 4]]),
     Ones = numerl:matrix([[1], [1], [1], [1]]),
-    10.0 = numerl:ddot(Incs, Ones),
-    30.0 = numerl:ddot(Incs, Incs),
-    4.0 = numerl:ddot(Ones, Ones).
-
-daxpy_test()->
-    Ones = numerl:matrix([[1, 1, 1, 1]]),
-    Incs = numerl:matrix([[1, 2, 3, 4]]),
-    true = numerl:equals(numerl:matrix([[3, 4, 5, 6]]), numerl:daxpy(4, 2, Ones, Incs)).
-
-dgemv_test()->
-    V10 = numerl:matrix([[1,2]]),
-    V01 = numerl:matrix([[0], [1]]),
-    M = numerl:matrix([[1,2],[3,4]]),
-    true = numerl:equals(numerl:matrix([[10],[26]]), numerl:dgemv(2,M,V10, 4, V01)).
+    10.0 = numerl:vec_dot(Incs, Ones),
+    30.0 = numerl:vec_dot(Incs, Incs),
+    4.0 = numerl:vec_dot(Ones, Ones).
 
 dot_test()->
     A = numerl:matrix([[1,2]]),
@@ -157,6 +145,7 @@ memleak_test()->
         M = numerl:rnd_matrix(N),
         _ = numerl:at(M,1),
         _ = numerl:mtfli(M),
+        _ = numerl:mtfl(M),
         _ = numerl:equals(M,M),
         _ = numerl:add(M,M),
         _ = numerl:sub(M,M),
@@ -165,8 +154,8 @@ memleak_test()->
         _ = numerl:divide(M,2),
         _ = numerl:transpose(M),
         _ = numerl:inv(M),
-        _ = numerl:dnrm2(M),
-        _ = numerl:ddot(M,M),
+        _ = numerl:nrm2(M),
+        _ = numerl:vec_dot(M,M),
         _ = numerl:dot(M,M)
         end,
     

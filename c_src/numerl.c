@@ -273,36 +273,6 @@ void debug_write_matrix(Matrix m){
 
 }
 
-//@arg 0: Matrix.
-//@return Nothing.
-ERL_NIF_TERM nif_matrix_print(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix m;
-    
-    if(!enif_get(env, argv, "m", &m))
-        return enif_make_badarg(env);
-
-    char *content = enif_alloc(sizeof(char)*((2*m.n_cols-1)*m.n_rows*PRECISION + m.n_rows*2 + 3));
-    content[0] = '[';
-    content[1] = '\0';
-    char converted[PRECISION];
-
-    for(int i=0; i<m.n_rows; i++){
-        strcat(content, "[");
-        for(int j = 0; j<m.n_cols; j++){
-            snprintf(converted, PRECISION-1, "%.5lf", m.content[i*m.n_cols+j]);
-            strcat(content, converted);
-            if(j != m.n_cols-1)
-                strcat(content, " ");
-        }
-        strcat(content, "]");
-    }
-    strcat(content, "]");
-    
-    ERL_NIF_TERM result = enif_make_atom(env, content);
-    enif_free(content);
-    return result;
-}
-
 
 //@arg 0: matrix.
 //@arg 1: int, coord m: row
@@ -353,7 +323,24 @@ ERL_NIF_TERM nif_mtfli(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     ERL_NIF_TERM result = enif_make_list_from_array(env, arr, n_elems);
     enif_free(arr);
     return result;
+}
 
+//Matrix to flattened list of ints
+ERL_NIF_TERM nif_mtfl(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix M;
+    if(!enif_get(env, argv, "m", &M)){
+        return enif_make_badarg(env);
+    }
+
+    int n_elems = M.n_cols * M.n_rows;
+    ERL_NIF_TERM *arr = enif_alloc(sizeof(ERL_NIF_TERM)*n_elems);
+    for(int i = 0; i<n_elems; i++){
+        arr[i] = enif_make_double(env, M.content[i]);
+    }
+    
+    ERL_NIF_TERM result = enif_make_list_from_array(env, arr, n_elems);
+    enif_free(arr);
+    return result;
 }
 
 //Equal all doubles
@@ -748,10 +735,10 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 ErlNifFunc nif_funcs[] = {
     {"matrix", 1, nif_matrix},
-    {"print", 1, nif_matrix_print},
     {"get", 3, nif_get},
     {"at", 2, nif_at},
     {"mtfli", 1, nif_mtfli},
+    {"mtfl", 1, nif_mtfl},
     {"equals", 2, nif_eq},
     {"row", 2, nif_row},
     {"col", 2, nif_col},
@@ -766,10 +753,8 @@ ErlNifFunc nif_funcs[] = {
     {"inv", 1, nif_inv},
     
     //--- BLAS----------
-    {"dnrm2", 1, nif_dnrm2},
-    {"ddot", 2, nif_ddot},
-    {"daxpy", 4, nif_daxpy},
-    {"dgemv", 5, nif_dgemv},
+    {"nrm2", 1, nif_dnrm2},
+    {"vec_dot", 2, nif_ddot},
     {"dot", 2, nif_dgemm}
 };
 
