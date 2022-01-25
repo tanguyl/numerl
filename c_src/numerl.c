@@ -349,7 +349,10 @@ ERL_NIF_TERM nif_mtfli(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     for(int i = 0; i<n_elems; i++){
         arr[i] = enif_make_int(env, (int)M.content[i]);
     }
-    return enif_make_list_from_array(env, arr, n_elems);
+    
+    ERL_NIF_TERM result = enif_make_list_from_array(env, arr, n_elems);
+    enif_free(arr);
+    return result;
 
 }
 
