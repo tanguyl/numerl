@@ -111,15 +111,15 @@ inv(_)->
 %------CBLAS--------
 
 %dnrm2
-%Calculates the squared root of the sum of the contents.
+%Calculates the squared root of the sum of the squared contents.
 dnrm2(_)->
     nif_not_loaded.
 
 % ddot: dot product of two vectors
-% Arguments: int n, vector x, vector y.
+% Arguments: vector x, vector y.
 %   n is the number of coordinates we should take into account (n < min(len(x), len(y)).
 %   x and y are matrices, with one of their dimension equal to 1.
-% Returns the result of the dot product of the first N coordinates of x, y.
+% Returns the dot product of all the coordinates of X,Y.
 % The returned vector is in the same dimension of y (column or row).
 ddot(_, _)->
     nif_not_loaded.

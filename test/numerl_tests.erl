@@ -149,3 +149,38 @@ dot_test()->
     A = numerl:matrix([[1,2]]),
     B = numerl:matrix([[3,4], [5,6]]),
     true = numerl:equals(numerl:matrix([[13, 16]]), numerl:dot(A,B)).
+
+memleak_test()->
+    %For input matrices of size 10: run all function once, check memory, run 5 more times, check if memory increase.
+    N = 10,
+    AllFcts = fun()->
+        M = numerl:rnd_matrix(N),
+        _ = numerl:at(M,1),
+        _ = numerl:mtfli(M),
+        _ = numerl:equals(M,M),
+        _ = numerl:add(M,M),
+        _ = numerl:sub(M,M),
+        _ = numerl:mult(M,M),
+        _ = numerl:mult(M,1),
+        _ = numerl:divide(M,2),
+        _ = numerl:transpose(M),
+        _ = numerl:inv(M),
+        _ = numerl:dnrm2(M),
+        _ = numerl:ddot(M,M),
+        _ = numerl:dot(M,M)
+        end,
+    
+    AllFcts(),
+    erlang:garbage_collect(),
+    {memory, M_first_run} = erlang:process_info(self(), memory),
+
+    AllFcts(), AllFcts(), AllFcts(), AllFcts(),
+
+    erlang:garbage_collect(),
+    {memory, M_second_run} = erlang:process_info(self(), memory),
+
+    0 =< M_second_run - M_first_run.
+
+
+    
+    
