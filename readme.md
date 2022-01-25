@@ -46,11 +46,12 @@ The following operators are implemented: comparison, addition, and multiplicatio
 
 ```erlang
 NotTrue = numerl:equals(L0, Eye).
-Eye2 = numerl:add(Eye, Zeros).
-Neye = numerl:sub(Zeros, Eye).
-Mult = numerl:dot(L0, L0).
-Inv = numerl:inv(L0).
-Tr = numerl:transpose(L0).
+Eye2    = numerl:add(Eye, Zeros).
+Neye    = numerl:sub(Zeros, Eye).
+Mult    = numerl:mult(L0, L0). %Arg2 either matrix (elemt-wise op) or number
+D       = numerl:div(L0, 2).   %Arg2 number.
+Inv     = numerl:inv(L0).       %Arg2 
+Tr      = numerl:transpose(L0).
 ```
 
 ## Accessors
@@ -58,9 +59,11 @@ Tr = numerl:transpose(L0).
 Access to elements / columns / rows of matrices is done as such:
 
 ```erlang
-One = numerl:get(Eye, 1,1).
-OneO = numerl:row(Eye, 1).
-OOne = numerl:col(Eye, 2).
+One     = numerl:get(Eye, 1,1).
+OneO    = numerl:row(Eye, 1).
+OOne    = numerl:col(Eye, 2).
+[1]     = numerl:mtfli(numerl:matrix([[1.0]])). %Matrix to flattened list of int.
+1.0     = numerl:at(Eye,1). %Returns N'th value in flattened array.
 ```
         
 The function print can be used to return an atom representation of a matrix.
@@ -107,10 +110,10 @@ dgemv returns the result of Alpha\*A\*X + Beta\*Y. Alpha and Beta are numbers; M
 GemvRes = numerl:dgemv(Alpha, A, X, Beta, Y).
 ```
 
-dgemm returns the result of Alpha\*A\*B + Beta\*C. Alpha and Beta are numbers; A,B and C are matrices.
+dgemm returns the dot product of A*B.
 
 ```erlang
-GemmRes = numerl:dgemv(Alpha, A, B, Beta, C).
+GemmRes = numerl:dot(A, B).
 ```
 
 Support for LAPACKE (dgesv) was temporarily dropped for easier OSX integration.

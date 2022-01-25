@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eye/1, zeros/2, 'equals'/2, add/2, sub/2,dot/2, divide/2, matrix/1, rnd_matrix/1, get/3, at/2, row/2, col/2, transpose/1, inv/1, print/1, dnrm2/1, ddot/2, daxpy/4, dgemv/5, dgemm/2]).
+-export([ eye/1, zeros/2, equals/2, add/2, sub/2,mult/2, divide/2, matrix/1, rnd_matrix/1, get/3, at/2, mtfli/1, row/2, col/2, transpose/1, inv/1, print/1, dnrm2/1, ddot/2, daxpy/4, dgemv/5, dot/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -32,6 +32,10 @@ matrix(_) ->
 at(_Matrix,_Nth)->
     nif_not_loaded.
 
+%%Returns the matrix as a flattened list of ints.
+mtfli(_mtrix)->
+    nif_not_loaded.
+
 %%Returns a value from a matrix.
 get(_,_,_) ->
     nif_not_loaded.
@@ -47,12 +51,11 @@ col(_,_) ->
 
 
 %%Equality test between matrixes.
-'equals'(_, _) ->
+equals(_, _) ->
     nif_not_loaded.
 
 
 %%Addition of matrix.
-
 add(_, _) ->
     nif_not_loaded.
 
@@ -63,8 +66,8 @@ sub(_, _) ->
 
 
 %% Matrix multiplication.
-dot(A,B) when is_number(B) -> '*_num'(A,B);
-dot(A,B) -> '*_matrix'(A,B).
+mult(A,B) when is_number(B) -> '*_num'(A,B);
+mult(A,B) -> '*_matrix'(A,B).
 
 '*_num'(_,_)->
     nif_not_loaded.
@@ -139,5 +142,5 @@ dgemv(_,_,_,_,_)->
 %   alpha, beta: numbers (float or ints) used as doubles.
 %   A,B,C: matrices.
 % Returns the matrice resulting of the operations alpha * A * B + beta * C.
-dgemm(_,_)->
+dot(_,_)->
     nif_not_loaded.

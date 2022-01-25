@@ -337,6 +337,21 @@ ERL_NIF_TERM nif_at(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     return enif_make_double(env, matrix.content[n]);
 }
 
+//Matrix to flattened list of ints
+ERL_NIF_TERM nif_mtfli(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix M;
+    if(!enif_get(env, argv, "m", &M)){
+        return enif_make_badarg(env);
+    }
+
+    int n_elems = M.n_cols * M.n_rows;
+    ERL_NIF_TERM *arr = enif_alloc(sizeof(ERL_NIF_TERM)*n_elems);
+    for(int i = 0; i<n_elems; i++){
+        arr[i] = enif_make_int(env, (int)M.content[i]);
+    }
+    return enif_make_list_from_array(env, arr, n_elems);
+
+}
 
 //Equal all doubles
 //Compares wether all doubles are approximatively the same.
@@ -526,7 +541,7 @@ ERL_NIF_TERM nif_mult_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 //arg 0: double or int
 //arg 1: Matrix
-//@return the result of multiplying each matrix element by arg 0.
+//@return the result of dividing each matrix element by arg 0.
 ERL_NIF_TERM nif_div_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     double a;
@@ -545,34 +560,20 @@ ERL_NIF_TERM nif_div_num(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 //@arg 0: Matrix.
 //@arg 1: Matrix.
-//@return Matrix resulting of multiplication.
-ERL_NIF_TERM _nif_mult_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+//@return Matrix resulting of element-wise multiplication.
+ERL_NIF_TERM nif_mult_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
    
     Matrix a,b;
-    if(!enif_get(env, argv, "mm", &a, &b))
+    int n;
+
+    if(!enif_get(env, argv, "mm", &a, &b)
+        || (n = a.n_cols*a.n_rows) != b.n_cols*b.n_rows)
         return enif_make_badarg(env);
-        
-    int n_rows = a.n_rows;
-    int n_cols = b.n_cols;
 
-    if(a.n_cols != b.n_rows)
-        return atom_nok;
-
-    Matrix result = matrix_alloc(n_rows, n_cols);
-    memset(result.content, 0.0, n_rows*n_cols * sizeof(double));
-
-    //Will this create a mem leak?
-    Matrix b_tr = tr(b); 
-    
-    for(int i = 0; i < n_rows; i++){
-        for(int j = 0; j < n_cols; j++){
-           for(int k = 0; k<a.n_cols; k++){
-               result.content[j+i*result.n_cols] += a.content[k+i*a.n_cols] * b_tr.content[k+j*b_tr.n_cols];
-           }
-        }
+    Matrix result = matrix_alloc(a.n_rows, a.n_cols);
+    for(int i = 0; i<n; i++){
+        result.content[i] = a.content[i]*b.content[i];
     }
-
-    matrix_free(b_tr);
 
     return matrix_to_erl(env, result);
 }
@@ -747,6 +748,7 @@ ErlNifFunc nif_funcs[] = {
     {"print", 1, nif_matrix_print},
     {"get", 3, nif_get},
     {"at", 2, nif_at},
+    {"mtfli", 1, nif_mtfli},
     {"equals", 2, nif_eq},
     {"row", 2, nif_row},
     {"col", 2, nif_col},
@@ -754,7 +756,7 @@ ErlNifFunc nif_funcs[] = {
     {"sub", 2, nif_minus},
     {"zeros", 2, nif_zero},
     {"eye", 1, nif_eye},
-    {"*_matrix", 2, _nif_mult_matrix},
+    {"*_matrix", 2, nif_mult_matrix},
     {"*_num", 2, nif_mult_num},
     {"divide", 2, nif_div_num},
     {"transpose", 1, nif_tr},
@@ -765,7 +767,7 @@ ErlNifFunc nif_funcs[] = {
     {"ddot", 2, nif_ddot},
     {"daxpy", 4, nif_daxpy},
     {"dgemv", 5, nif_dgemv},
-    {"dgemm", 2, nif_dgemm}
+    {"dot", 2, nif_dgemm}
 };
 
 ERL_NIF_INIT(numerl, nif_funcs, load, NULL, upgrade, NULL)

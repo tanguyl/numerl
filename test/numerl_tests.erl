@@ -30,6 +30,9 @@ at_test()->
     0.0 = numerl:at(numerl:matrix([[1,0]]), 2),
     2.0 = numerl:at(numerl:matrix([[2,3,4]]), 1).
 
+mtfli_test()->
+    [1,2,3] = numerl:mtfli(numerl:matrix([[1.1, 2.9, 3]])).
+
 equal_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
     M1 = [[1.0, 2.0]],
@@ -89,20 +92,15 @@ eye_test() ->
 
 mult_num_test()->
     M0 = numerl:matrix([[1.0, 2.0]]),
-    true = numerl:equals(numerl:matrix([[2,4]]), numerl:dot(M0, 2)),
-    true = numerl:equals(numerl:matrix([[0,0]]), numerl:dot(M0, 0)),
-    true = numerl:equals(numerl:matrix([[-1, -2]]), numerl:dot(M0, -1)).
+    true = numerl:equals(numerl:matrix([[2,4]]), numerl:mult(M0, 2)),
+    true = numerl:equals(numerl:matrix([[0,0]]), numerl:mult(M0, 0)),
+    true = numerl:equals(numerl:matrix([[-1, -2]]), numerl:mult(M0, -1)).
 
 mult_matrix_test() ->
-    CM0 = numerl:eye(2),
-    CM1 = numerl:matrix([[1.0, 2.0], [3.0, 4.0]]),
-    CM3 = numerl:matrix([[1.0], [2.0]]),
-    CM5 = numerl:matrix([[5.0], [11.0]]),
-    CM4 = numerl:matrix([[1.0, 2.0]]),
-    CM6 = numerl:matrix([[7.0, 10.0]]),
-    true = numerl:equals(CM1, numerl:dot(CM1, CM0)),
-    true = numerl:equals(CM5, numerl:dot(CM1, CM3)),
-    true = numerl:equals(CM6 ,numerl:dot(CM4, CM1)).
+    CM1 = numerl:matrix([[1, 2, 3]]),
+    CM2 = numerl:matrix([[2, 1, 1]]),
+    CM3 = numerl:matrix([[2, 2, 3]]),
+    true = numerl:equals(CM3, numerl:mult(CM1, CM2)).
 
 div_test()->
     M0 = numerl:matrix([[1,2,3]]),
@@ -148,7 +146,7 @@ dgemv_test()->
     M = numerl:matrix([[1,2],[3,4]]),
     true = numerl:equals(numerl:matrix([[10],[26]]), numerl:dgemv(2,M,V10, 4, V01)).
 
-dgemm_test()->
+dot_test()->
     A = numerl:matrix([[1,2]]),
     B = numerl:matrix([[3,4], [5,6]]),
-    true = numerl:equals(numerl:matrix([[13, 16]]), numerl:dgemm(A,B)).
+    true = numerl:equals(numerl:matrix([[13, 16]]), numerl:dot(A,B)).
