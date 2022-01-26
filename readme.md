@@ -10,6 +10,8 @@ This project should be used as a rebar3 dependency:
     {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
 ```
 
+A project example can be found at https://github.com/tanguyl/raytracer.
+
 # Installation
 Assuming a working Erlang + rebar3 installation, openblas and lapacke are required.  
 
@@ -114,9 +116,9 @@ They have the following structure:
 op(Lval, Rval).                    % Lval: a matrix, Rval: a matrix || a number
 ```
 
-In case of ```erlang divide/2 ``` operator, for an ```erlang Rval ``` either null or containing a null value, a badarg is thrown.   
+In case of ``` divide/2 ``` operator, for an ``` Rval ``` either null or containing a null value, a badarg is thrown.   
 
-These ops can be combined with the ```erlang eval/1 ``` function:
+These ops can be combined with the ``` eval/1 ``` function:
 
 ```erlang
 M = numerl:rnd_matrix(N),
