@@ -12,7 +12,7 @@ This will be solved by the end of 2022's Q1.
 This library is a rebar3 dependency (https://github.com/erlang/rebar3):
 
 ```erlang
-    {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
+    {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", {branch, "master"}}}]}.
 ```
 
 A ```numerl``` example can be found at https://github.com/tanguyl/raytracer.
