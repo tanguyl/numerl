@@ -10,16 +10,16 @@ get_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
     CM0 = numerl:matrix(M0),
     V00 = 1.0,
-    V00 = numerl:get(1,1,CM0),
+    V00 = numerl:get(CM0, 1,1),
 
     V11 = 4.0,
-    V11 = numerl:get(2,2,CM0),
+    V11 = numerl:get(CM0,2,2),
 
     V01 = 2.0,
-    V01 = numerl:get(1,2,CM0),
+    V01 = numerl:get(CM0,1,2),
 
     V10 = 3.0,
-    V10 = numerl:get(2,1, CM0).
+    V10 = numerl:get(CM0,2,1).
 
 at_test()->
     0.0 = numerl:at(numerl:matrix([[1,0]]), 2),
@@ -50,7 +50,7 @@ row_test() ->
     R0 = [[3.0, 4.0]],
     CM0 = numerl:matrix(M0),
     CR0 = numerl:matrix(R0),
-    true = numerl:equals(CR0, numerl:row(2, CM0)).
+    true = numerl:equals(CR0, numerl:row(CM0,2)).
 
 
 col_test() ->
@@ -58,20 +58,20 @@ col_test() ->
     C0 = [[2.0], [4.0]],
     CM0 = numerl:matrix(M0),
     CC0 = numerl:matrix(C0),
-    true = numerl:equals(CC0, numerl:col(2, CM0)).
+    true = numerl:equals(CC0, numerl:col(CM0,2)).
 
 
 zero_test() ->
     CM0 = numerl:zeros(1,5),
-    0.0 = numerl:get(1, 5, CM0).
+    0.0 = numerl:get(CM0, 1, 5).
 
 eye_test() ->
     CM0 = numerl:eye(5),
-    M0 = numerl:get(5,5,CM0),
+    M0 = numerl:get(CM0, 5,5),
     M0 = 1.0,
-    M0 = numerl:get(1,1,CM0),
-    M0 = numerl:get(2,2,CM0),
-    M0 = numerl:get(4,4,CM0).
+    M0 = numerl:get(CM0, 1,1),
+    M0 = numerl:get(CM0, 2,2),
+    M0 = numerl:get(CM0, 4,4).
 
 
 add_test()->

@@ -34,8 +34,7 @@ The following functions are available:
 Mat_builds = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
 Comparator = [equals/2].
 Accesors   = [mtfli/1, mtfl/1, get/3, at/2, row/2, col/2].
-Misc_ops   = [transpose/1].
-BLAPACK    = [inv/1, nrm2/1, vec_dot/2, dot/2].
+BLAPACK    = [inv/1, nrm2/1, vec_dot/2, dot/2, transpose/1].
 ```
 
 ## Matrices
@@ -57,16 +56,18 @@ Mat_builds = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
 They can be used as follows:
 
 ```erlang                           
-% FCT                              INPUT(S)
-numerl:matrix([[1, 2.0],[3, 4.0]]).% L,lists of lists of numberss.
-numerl:rnd_matrix(2).              % N,  create random   matrix of size NxN.
-numerl:eye(2).                     % N,  create identity matrix of size NxN.
-numerl:zeros(2, 2).                % N,M create empty    matrix of size NxM.
+% FCT                              INPUT(S)   OUTPUT    
+numerl:matrix([[1, 2.0],[3, 4.0]]).% L
+numerl:rnd_matrix(2).              % N,     random   matrix of size NxN.
+numerl:eye(2).                     % N,     identity matrix of size NxN.
+numerl:zeros(2, 2).                % N,M    empty    matrix of size NxM.
 ```
+
+The ```matrix/1``` takes as input a list of rows.
 
 ## Comparison
 
-Matrices are stored as arrays of doubles, the granularity of which makes the =/2 operator unadviced. Instead, numerl provides it's own comparison operator:
+Matrices are stored as arrays of doubles, the granularity of which makes the ```=/2``` operator unadviced. Instead, numerl provides its own comparison operator:
 
 ```erlang
 Comparator = [equals/2].
@@ -76,7 +77,7 @@ It can be used as follows:
 
 ```erlang                                    
 E = numerl:eye(2),                 %
-Z = nmerl:zeros(2,2),              %
+Z = numerl:zeros(2,2),              %
 %FCT                               INPUTS
 Boolean = numerl:equals(E,Z).      % M1,M2: compared matrices.
 ```
@@ -87,17 +88,19 @@ Matrices content can be extracted with the following functions:
 Accesors = [mtfli/1, mtfl/1, row/2, col/2, get/3, at/2].
 ```
 
+They are used as such:
 ```erlang                             
-M = numerl:rnd_matrix(5),          %
-N = 1,                             %
-O = 1,                             %
-%FCT                               OUTPUT
-numerl:mtfli(M),                   % M as a flattened list of ints
-numerl:mtfl(M),                    % M as a flattened list of doubles
-numerl:row(M,N),                   % The N'th row of M as a matrix.
-numerl:col(M,N),                   % The N'th col of M as a matrix.
-numerl:get(N,O,M).                 % The element at position N,O of M.
-numerl:at(M,N).                    % The N'th element of the matrix.
+M = numerl:matrix([[1,2,3]]),
+P = numerl:matrix([[1]]),   
+N = 1,                             
+O = 1,                             
+%Output         Fct                 Input
+[1,2,3]       = numerl:mtfli(M),   % matrix M
+[1.0,2.0,3.0] = numerl:mtfl(M),    % Matrix M
+M             = numerl:row(M,N),   % N  in [1, M.n_rows], M
+P             = numerl:col(M,N),   % N  in [1, M.n_cols], M
+1.0           = numerl:get(M,N,O), % N in
+1.0           = numerl:at(M,N).    % The N'th element of the matrix.
 ```
 
 ## Element-wise operations
@@ -119,17 +122,59 @@ In case of ```erlang divide/2 ``` operator, for an ```erlang Rval ``` either nul
 These ops can be combined with the ```erlang eval/1 ``` function:
 
 ```erlang
-M = numerl:rnd_matrix(N),
+M = numerl:rnd_matrix(2),
 %FCT                               INPUTS
-eval([M, add, 1, div, 2, mult, M]).% L: a list of V1,Op1,V2,OP2...
+numerl:eval([M, add, 1,            % L: a list of V1,Op1,V2,OP2...
+             divide, 2,
+              mult, M]).
 ```
 
-## MISC
+## More functions
+
 ```erlang
-Misc_ops = [transpose/1].
+Ops = [inv/1, nrm2/1, vec_dot/2, dot/2, transpose/1].
 ```
 
-## BLAS and LAPACKE
+### Inv
+
+Returns the inverse of input function.
 ```erlang
-BLAPACK = [inv/1, nrm2/1, vec_dot/2, dot/2].
+M = numerl:rnd_matrix(2),
+P = numerl:inv(M).
+```
+A badarg is thrown for input non-square matrix; and error "nif_inv: could not invert singular matrix." is thrown in case of input singular matrix.   
+
+Implementation is based upon a LAPACKE LU's decomposition/inversion.
+
+### nrm2
+ Returns the root square of the sum of the squared elements of input matrix.
+ ```erlang
+P   = numerl:matrix([[-3]]),
+3.0 = numerl:nrm2(P).
+```
+
+### vec_dot
+ Returns the sum of element-wise multiplication of input matrices.
+ ```erlang
+Q    = numerl:matrix([[1,2]]),
+R    = numerl:matrix([[3,4]]),
+11.0 = numerl:vec_dot(Q,R).
+```
+Input matrices need to contain the same number of elements; but their dimensions do not need to match.
+
+### dot
+Returns the product of input matrices. 
+ ```erlang
+I    = numerl:eye(2),
+I2   = numerl:mult(I,2),
+M    = numerl:matrix([[1,2], [3,4]]),
+R    = numerl:dot(M,I2).
+```
+
+### transpose
+Returns the transpose of input matrix.
+```erlang
+I = numerl:eye(2),
+It = numerl:transpose(I),
+true = numerl:equals(I,It).
 ```

@@ -274,6 +274,37 @@ void debug_write_matrix(Matrix m){
 }
 
 
+//Equal all doubles
+//Compares wether all doubles are approximatively the same.
+int equal_ad(double* a, double* b, int size){
+    for(int i = 0; i<size; i++){
+        if(fabs(a[i] - b[i])> 1e-6)
+            return 0;
+    }
+    return 1;
+}
+
+//@arg 0: Array.
+//@arg 1: Array.
+//@return: true if arrays share content, false if they have different content || size..
+ERL_NIF_TERM nif_equals(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
+    Matrix a,b;
+
+    if(!enif_get(env, argv, "mm", &a, &b))
+        return atom_false;
+
+    //Compare number of columns and rows
+    if((a.n_cols != b.n_cols || a.n_rows != b.n_rows))
+        return atom_false;
+
+    //Compare content of arrays
+    if(!equal_ad(a.content, b.content, a.n_cols*a.n_rows))
+        return atom_false;
+    
+    return atom_true;
+}
+
+
 //@arg 0: matrix.
 //@arg 1: int, coord m: row
 //@arg 2: int, coord n: col
@@ -282,7 +313,7 @@ ERL_NIF_TERM nif_get(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     int m,n;
     Matrix matrix;
 
-    if(!enif_get(env, argv, "iim", &m, &n, &matrix))
+    if(!enif_get(env, argv, "mii", &matrix, &m, &n))
         return enif_make_badarg(env);
     m--, n--;
 
@@ -343,35 +374,6 @@ ERL_NIF_TERM nif_mtfl(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     return result;
 }
 
-//Equal all doubles
-//Compares wether all doubles are approximatively the same.
-int equal_ad(double* a, double* b, int size){
-    for(int i = 0; i<size; i++){
-        if(fabs(a[i] - b[i])> 1e-6)
-            return 0;
-    }
-    return 1;
-}
-
-//@arg 0: Array.
-//@arg 1: Array.
-//@return: true if arrays share content, false if they have different content || size..
-ERL_NIF_TERM nif_equals(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
-    Matrix a,b;
-
-    if(!enif_get(env, argv, "mm", &a, &b))
-        return atom_false;
-
-    //Compare number of columns and rows
-    if((a.n_cols != b.n_cols || a.n_rows != b.n_rows))
-        return atom_false;
-
-    //Compare content of arrays
-    if(!equal_ad(a.content, b.content, a.n_cols*a.n_rows))
-        return atom_false;
-    
-    return atom_true;
-}
 
 
 //@arg 0: int.
@@ -380,7 +382,7 @@ ERL_NIF_TERM nif_equals(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 ERL_NIF_TERM nif_row(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     int row_req;
     Matrix matrix;
-    if(!enif_get(env, argv, "im", &row_req, &matrix))
+    if(!enif_get(env, argv, "mi", &matrix, &row_req))
         return enif_make_badarg(env);
 
     row_req--;
@@ -400,7 +402,7 @@ ERL_NIF_TERM nif_row(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     int col_req;
     Matrix matrix;
-    if(!enif_get(env, argv, "im", &col_req, &matrix))
+    if(!enif_get(env, argv, "mi", &matrix, &col_req))
         return enif_make_badarg(env);
 
     col_req--;    
