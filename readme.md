@@ -1,116 +1,189 @@
 # NUMERL
 
-NumErl is a small API for matrix operations in Erlang.
+NUMeric ERLang is an API for matrix operations in Erlang. All functions (except ```[eval/1, rnd_matrix/1]```) are implemented in NIFs; some make use of BLAS and LAPACKE ```[inv/1, nrm2/1, vec_dot/2, dot/2]``` for even better performances.  
+
+## 1ms rule
+This library does not yet take into account the 1ms rule of NIFs; DO NOT USE BIG MATRICES yet.   
+Work is in progress to make ```numerl```'s functions execute on chunks of matrices in parallel, solving this issue and improving performances.   
+This will be solved by the end of 2022's Q1.
 
 # Usage
 
-This project is designed as a rebar3 dependency (https://github.com/erlang/rebar3): add the following dependency.
+This library is a rebar3 dependency (https://github.com/erlang/rebar3):
 
 ```erlang
-    {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", "master"}}]}.
+    {deps, [{numerl, {git, "https://github.com/tanguyl/numerl.git", {branch, "master"}}}]}.
 ```
 
-# Installation
-Assuming you have a working Erlang + rebar3 installation, you will need openblas and lapacke:
+A ```numerl``` example can be found at https://github.com/tanguyl/raytracer.
 
-Ubuntu-like linux:
+# Installation
+Openblas and lapacke are mandatory to use this library. 
+
+Ubuntu-like os'es:
 ```sh
     sudo apt-get install libopenblas-dev liblapacke-dev
 ```
 
-OSX: lapacke is used trough the accelerate framework; only openblas is required.
+macOS:   
+lapacke is included trough the accelerate framework; only openblas is required.
 ```sh
     brew install openblas
 ```
 
-Windows:
-Isn't supported 'out of the box'; but can use Numerl trough WSL.
+Windows:   
+Tested on WSL :)
 
-# API
-
-## Matrix creation
-
-Matrices are created the following ways:
+# MAN
+## API
+The following functions are available:
 
 ```erlang
-L0 = numerl:matrix([[1, 2.0], [3, 4.0]]).
-Eye = numerl:eye(2).
-Zeros = numerl:zeros(2, 2).
+Constructors     = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
+Comparator       = [equals/2].
+Accesors         = [mtfli/1, mtfl/1, get/3, at/2, row/2, col/2].
+Element_wise_ops = [add/2, sub/2 ,mult/2, divide/2].
+Ops              = [inv/1, nrm2/1, vec_dot/2, dot/2, transpose/1].
 ```
 
-The eye and zero functions take as argument positive numbers; list\_to\_matrix takes a list of list of numbers (floats or ints).
-
-## Operators
-
-The following operators are implemented: comparison, addition, and multiplication.
+## Matrices
+Matrices are defined as follows:
 
 ```erlang
-NotTrue = numerl:equals(L0, Eye).
-Eye2 = numerl:add(Eye, Zeros).
-Neye = numerl:sub(Zeros, Eye).
-Mult = numerl:dot(L0, L0).
-Inv = numerl:inv(L0).
-Tr = numerl:transpose(L0).
+-record(matrix,{n_rows, n_cols, bin}).
+```
+The bin field is a Binary, containing the represented matrices values stored as doubles.
+
+## Constructors
+
+The following functions can be used to create matrices:
+
+```erlang
+Constructors = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
+```
+
+They can be used as follows:
+
+```erlang                           
+% FCT                              INPUT(S)   OUTPUT    
+numerl:matrix([[1, 2.0],[3, 4.0]]).% L    
+numerl:rnd_matrix(2).              % N,     random   matrix of size NxN.
+numerl:eye(2).                     % N,     identity matrix of size NxN.
+numerl:zeros(2, 2).                % N,M    empty    matrix of size NxM.
+```
+
+The ```matrix/1``` takes as input a list of rows.
+
+## Comparator
+
+Matrices are stored as arrays of doubles, the granularity of which makes the ```==/2``` operator unadviced. Instead, numerl provides its own comparison operator:
+
+```erlang
+Comparator = [equals/2].
+```
+
+It should be used as follows:
+
+```erlang                                    
+E = numerl:eye(2),                 %
+Z = numerl:zeros(2,2),             %
+%FCT                               INPUTS
+Boolean = numerl:equals(E,Z).      % M1,M2: compared matrices.
 ```
 
 ## Accessors
-
-Access to elements / columns / rows of matrices is done as such:
-
+Matrices content can be extracted with the following functions:
 ```erlang
-One = numerl:get(Eye, 1,1).
-OneO = numerl:row(Eye, 1).
-OOne = numerl:col(Eye, 2).
-```
-        
-The function print can be used to return an atom representation of a matrix.
-
-```erlang
-1> numerl:print(numerl:eye(2)).
-'[[1.00000 0.00000][0.00000 1.00000]]'
-```
-## BLAS
-
-BLAS are stardard, highly optimized functions used to compute operations between matrices and vectors. In numerl, vectors are simply matrices with at least one dimension of size 1:
-
-```erlang
-X = numerl:matrix([[1.0, 2.0]]).
-Y = numerl:matrix([[3], [4]]).
-```
-    
-The following variables are used to give examples.
-
-```erlang
-N = 2.
-Alpha = 1.0.
-Beta = 2.0.
-A = numerl:eye(2).
-B = numerl:eye(2).
-C = numerl:zeros(2,2).
+Accesors = [mtfli/1, mtfl/1, row/2, col/2, get/3, at/2].
 ```
 
-ddot returns the dot produtc of the first N values contained in X and Y, vectors.
-
-```erlang
-DotRes = numerl:ddot(N,X,Y).
+They are used as such:
+```erlang                             
+M = numerl:matrix([[1,2,3]]),
+P = numerl:matrix([[1]]),   
+N = 1,                             
+O = 1,                             
+%Output         Fct                 Input
+[1,2,3]       = numerl:mtfli(M),   % matrix M
+[1.0,2.0,3.0] = numerl:mtfl(M),    % Matrix M
+M             = numerl:row(M,N),   % N  in [1, M.n_rows], M
+P             = numerl:col(M,N),   % N  in [1, M.n_cols], M
+1.0           = numerl:get(M,N,O), % N in
+1.0           = numerl:at(M,N).    % The N'th element of the matrix.
 ```
 
-daxpy returns the result of Alpha\*X + Y taking into account the first N coordinates of vectors X and Y, alpha being a number.
+## Element-wise operations
+The following operations can be done element-wise on matrices:
 
 ```erlang
-DaxRes = numerl:daxpy(N, Alpha, X, Y).
+Element_wise_ops = [add/2, sub/2 ,mult/2, divide/2].
 ```
 
-dgemv returns the result of Alpha\*A\*X + Beta\*Y. Alpha and Beta are numbers; M is a matrix; X and Y are vectors.
+They have the following usage:
 
 ```erlang
-GemvRes = numerl:dgemv(Alpha, A, X, Beta, Y).
+%FCT                               INPUTS
+op(Lval, Rval).                    % Lval: a matrix, Rval: a matrix || a number
 ```
 
-dgemm returns the result of Alpha\*A\*B + Beta\*C. Alpha and Beta are numbers; A,B and C are matrices.
+For ``` divide/2 ``` op used with ``` Rval ``` either null or containing a null value, a badarg is thrown.   
+
+These ops can be combined with the ``` eval/1 ``` function:
 
 ```erlang
-GemmRes = numerl:dgemv(Alpha, A, B, Beta, C).
+M = numerl:rnd_matrix(2),
+%FCT                               INPUTS
+numerl:eval([M, add, 1,            % L: a list of V1,Op1,V2,OP2...
+             divide, 2,
+              mult, M]).
 ```
 
-Support for LAPACKE (dgesv) was temporarily dropped for easier OSX integration.
+## More functions
+
+```erlang
+Ops = [inv/1, nrm2/1, vec_dot/2, dot/2, transpose/1].
+```
+
+### Inv
+
+Returns the inverse of input function.
+```erlang
+M = numerl:rnd_matrix(2),
+P = numerl:inv(M).
+```
+A badarg is thrown for input non-square matrix; and error "nif_inv: could not invert singular matrix." is thrown in case of input singular matrix.   
+
+Implementation is based upon a LAPACKE LU's decomposition/inversion.
+
+### nrm2
+ Returns the root square of the sum of the squared elements of input matrix.
+ ```erlang
+P   = numerl:matrix([[-3]]),
+3.0 = numerl:nrm2(P).
+```
+
+### vec_dot
+ Returns the sum of element-wise multiplication of input matrices.
+ ```erlang
+Q    = numerl:matrix([[1,2]]),
+R    = numerl:matrix([[3,4]]),
+11.0 = numerl:vec_dot(Q,R).
+```
+Input matrices need to contain the same number of elements; but their dimensions do not need to match.
+
+### dot
+Returns the product of input matrices. 
+ ```erlang
+I    = numerl:eye(2),
+I2   = numerl:mult(I,2),
+M    = numerl:matrix([[1,2], [3,4]]),
+R    = numerl:dot(M,I2).
+```
+
+### transpose
+Returns the transpose of input matrix.
+```erlang
+I = numerl:eye(2),
+It = numerl:transpose(I),
+true = numerl:equals(I,It).
+```

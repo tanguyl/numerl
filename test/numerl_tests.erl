@@ -1,14 +1,9 @@
 -module(numerl_tests).
--compile(export_all).
 -include_lib("eunit/include/eunit.hrl").
 
 matrix_test() ->
     M0 = [[1.0, 0.0], [0.0, 1.0]],
     _ = numerl:matrix(M0).
-
-print_test() ->
-    M0 = numerl:matrix([[1.0/3.0, 0.0], [0.0, 1.0/3.0]]),
-    numerl:print(M0).
 
 get_test() ->
     %Testing access on square matrix
@@ -26,6 +21,15 @@ get_test() ->
     V10 = 3.0,
     V10 = numerl:get(2,1, CM0).
 
+at_test()->
+    0.0 = numerl:at(numerl:matrix([[1,0]]), 2),
+    2.0 = numerl:at(numerl:matrix([[2,3,4]]), 1).
+
+mtfli_test()->
+    [1,2,3] = numerl:mtfli(numerl:matrix([[1.1, 2.9, 3]])).
+
+mtfl_test()->
+    [1.1,2.1,3.4] = numerl:mtfl(numerl:matrix([[1.1, 2.1, 3.4]])).
 
 equal_test() ->
     M0 = [[1.0, 2.0], [3.0, 4.0]],
@@ -56,21 +60,6 @@ col_test() ->
     CC0 = numerl:matrix(C0),
     true = numerl:equals(CC0, numerl:col(2, CM0)).
 
-plus_test()->
-     M0 = [[1.0, 2.0], [3.0, 4.0]],
-     M1 = [[2.0, 4.0], [6.0, 8.0]],
-     CM0 = numerl:matrix(M0),
-     CM1 = numerl:matrix(M1),
-     CM0p = numerl:add(CM0, CM0),
-     true = numerl:equals(CM1, CM0p).
-
-minus_test()->
-     M0 = [[1, 2], [3, 4]],
-     M1 = [[0, 0], [0, 0]],
-     CM0 = numerl:matrix(M0),
-     CM1 = numerl:matrix(M1),
-     CM0p = numerl:sub(CM0, CM0),
-     true = numerl:equals(CM1, CM0p).
 
 zero_test() ->
     CM0 = numerl:zeros(1,5),
@@ -84,29 +73,52 @@ eye_test() ->
     M0 = numerl:get(2,2,CM0),
     M0 = numerl:get(4,4,CM0).
 
-mult_num_test()->
-    M0 = numerl:matrix([[1.0, 2.0]]),
-    true = numerl:equals(numerl:matrix([[2,4]]), numerl:dot(2, M0)),
-    true = numerl:equals(numerl:matrix([[0,0]]), numerl:dot(0, M0)),
-    true = numerl:equals(numerl:matrix([[-1, -2]]), numerl:dot(-1, M0)).
 
-mult_matrix_test() ->
-    CM0 = numerl:eye(2),
-    CM1 = numerl:matrix([[1.0, 2.0], [3.0, 4.0]]),
-    CM3 = numerl:matrix([[1.0], [2.0]]),
-    CM5 = numerl:matrix([[5.0], [11.0]]),
-    CM4 = numerl:matrix([[1.0, 2.0]]),
-    CM6 = numerl:matrix([[7.0, 10.0]]),
-    true = numerl:equals(CM1, numerl:dot(CM1, CM0)),
-    true = numerl:equals(CM5, numerl:dot(CM1, CM3)),
-    true = numerl:equals(CM6 ,numerl:dot(CM4, CM1)).
+add_test()->
+     CM0 = numerl:matrix([[1, 2], [3, 4]]),
+     CM1 = numerl:matrix([[2, 4], [6, 8]]),
+     CM3 = numerl:matrix([[2, 3], [4, 5]]),
+     true = numerl:equals(CM1, numerl:add(CM0, CM0)),
+     true = numerl:equals(CM3, numerl:add(CM0,1)).
 
-mult_matrix_num_test() ->
-    M0 = [[1.0, 2.0, 3.0]],
-    CR0 = numerl:matrix([[2, 4, 6]]),
-    CR = numerl:dot(2.0, numerl:matrix(M0)),
-    true = numerl:equals(CR0, CR).
 
+sub_test()->
+     CM0 = numerl:matrix([[1, 2], [3, 4]]),
+     CM1 = numerl:matrix([[2, 4], [6, 8]]),
+     CM3 = numerl:matrix([[-1, -2], [-3, -4]]),
+     CM4 = numerl:matrix([[0, 1], [2, 3]]),
+     true = numerl:equals(CM3, numerl:sub(CM0, CM1)),
+     true = numerl:equals(CM4, numerl:sub(CM0,1)).
+
+mult_test()->
+    CM0 = numerl:matrix([[1, 2], [3, 4]]),
+    CM1 = numerl:matrix([[2, 4], [6, 8]]),
+    CM3 = numerl:matrix([[2, 8], [18, 32]]),
+    CM4 = numerl:matrix([[2, 4], [6, 8]]),
+    true = numerl:equals(CM3, numerl:mult(CM0, CM1)),
+    true = numerl:equals(CM4, numerl:mult(CM0,2)).
+
+divide_test()->
+    CM0 = numerl:matrix([[1, 2], [3, 4]]),
+    CM1 = numerl:matrix([[2, 4], [6, 8]]),
+    CM3 = numerl:matrix([[0.5, 0.5], [0.5, 0.5]]),
+    CM4 = numerl:matrix([[0.5, 1], [1.5, 2]]),
+    true = numerl:equals(CM3, numerl:divide(CM0, CM1)),
+    true = numerl:equals(CM4, numerl:divide(CM0,2)),
+    badarg_error = 
+    try
+        numerl:divide(numerl:matrix([[1]]), 0),
+        no_error
+    catch 
+        error:badarg -> badarg_error
+    end,
+    badarg_error = 
+    try
+        numerl:divide(numerl:matrix([[1],[2]]), numerl:matrix([[1],[0]])),
+        no_error
+    catch 
+        error:badarg -> badarg_error
+    end.
 
 
 tr_test() ->
@@ -119,6 +131,7 @@ tr_test() ->
     CM1 = numerl:transpose(CM2).
 
 inv_test() ->
+    %Might cause an error if randomly generated matrix is singular.
     F = fun()->
         N = rand:uniform(20),
         M = numerl:rnd_matrix(N),
@@ -128,27 +141,55 @@ inv_test() ->
     List = [F() || _ <- lists:seq(1,50)],
     lists:all(fun(_)-> true end, List).
 
-ddot_test() ->
+
+
+vec_dot_test() ->
     Incs = numerl:matrix([[1, 2, 3, 4]]),
     Ones = numerl:matrix([[1], [1], [1], [1]]),
-    10.0 = numerl:ddot(4, Incs, Ones),
-    30.0 = numerl:ddot(4, Incs, Incs),
-    4.0 = numerl:ddot(4, Ones, Ones),
-    1.0 = numerl:ddot(1, Incs, Ones).
+    10.0 = numerl:vec_dot(Incs, Ones),
+    30.0 = numerl:vec_dot(Incs, Incs),
+    4.0 = numerl:vec_dot(Ones, Ones).
 
-daxpy_test()->
-    Ones = numerl:matrix([[1, 1, 1, 1]]),
-    Incs = numerl:matrix([[1, 2, 3, 4]]),
-    true = numerl:equals(numerl:matrix([[3, 4, 5, 6]]), numerl:daxpy(4, 2, Ones, Incs)).
-
-dgemv_test()->
-    V10 = numerl:matrix([[1,2]]),
-    V01 = numerl:matrix([[0], [1]]),
-    M = numerl:matrix([[1,2],[3,4]]),
-    true = numerl:equals(numerl:matrix([[10],[26]]), numerl:dgemv(2,M,V10, 4, V01)).
-
-dgemm_test()->
+dot_test()->
     A = numerl:matrix([[1,2]]),
     B = numerl:matrix([[3,4], [5,6]]),
-    C = numerl:matrix([[10, 12]]),
-    true = numerl:equals(numerl:matrix([[31, 38]]), numerl:dgemm(2,A,B,0.5,C)).
+    true = numerl:equals(numerl:matrix([[13, 16]]), numerl:dot(A,B)).
+
+memleak_test()->
+    %For input matrices of size 10: run all function once, check memory, run a couple more times, check if memory increase.
+    N = 10,
+    AllFcts = fun()->
+        M = numerl:rnd_matrix(N),
+        _ = numerl:at(M,1),
+        _ = numerl:mtfli(M),
+        _ = numerl:mtfl(M),
+        _ = numerl:equals(M,M),
+        _ = numerl:add(M,M),
+        _ = numerl:add(M,2),
+        _ = numerl:sub(M,M),
+        _ = numerl:sub(M,2),
+        _ = numerl:mult(M,M),
+        _ = numerl:mult(M,2),
+        _ = numerl:divide(M,M),
+        _ = numerl:divide(M,2),
+        _ = numerl:transpose(M),
+        _ = numerl:inv(M),
+        _ = numerl:nrm2(M),
+        _ = numerl:vec_dot(M,M),
+        _ = numerl:dot(M,M)
+        end,
+    
+    AllFcts(),
+    erlang:garbage_collect(),
+    {memory, M_first_run} = erlang:process_info(self(), memory),
+
+    AllFcts(), AllFcts(), AllFcts(), AllFcts(),
+
+    erlang:garbage_collect(),
+    {memory, M_second_run} = erlang:process_info(self(), memory),
+
+    M_first_run >= M_second_run.
+
+
+    
+    
