@@ -131,6 +131,7 @@ tr_test() ->
     CM1 = numerl:transpose(CM2).
 
 inv_test() ->
+    %Might cause an error if randomly generated matrix is singular.
     F = fun()->
         N = rand:uniform(20),
         M = numerl:rnd_matrix(N),

@@ -11,109 +11,125 @@ This project should be used as a rebar3 dependency:
 ```
 
 # Installation
-Assuming you have a working Erlang + rebar3 installation, you will need openblas and lapacke:
+Assuming a working Erlang + rebar3 installation, openblas and lapacke are required.  
 
-Ubuntu-like linux:
+Ubuntu-like os'es:
 ```sh
     sudo apt-get install libopenblas-dev liblapacke-dev
 ```
 
-Mac: lapacke should be usable via the accelerate framework; only openblas is required.
+macOS: lapacke is included trough the accelerate framework; only openblas is required.
 ```sh
     brew install openblas
 ```
 
 Windows:
-Isn't supported 'out of the box'; but can use Numerl trough WSL.
+Isn't tested natively, but can be installed via WSL.
 
-# API
+# MAN
+## API
+The following functions are available:
+
+```erlang
+Mat_builds = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
+Comparator = [equals/2].
+Accesors   = [mtfli/1, mtfl/1, get/3, at/2, row/2, col/2].
+Misc_ops   = [transpose/1].
+BLAPACK    = [inv/1, nrm2/1, vec_dot/2, dot/2].
+```
+
+## Matrices
+Matrices are defined as follows:
+
+```erlang
+-record(matrix,{n_rows, n_cols, bin}).
+```
+The bin field is a Binary, containing the represented matrices values stored as doubles.
 
 ## Matrix creation
 
-Matrices are created the following ways:
+The following functions can be used to create matrices:
 
 ```erlang
-L0 = numerl:matrix([[1, 2.0], [3, 4.0]]).
-Eye = numerl:eye(2).
-Zeros = numerl:zeros(2, 2).
+Mat_builds = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
 ```
 
-The eye and zero functions take as argument positive numbers; list\_to\_matrix takes a list of list of numbers (floats or ints).
+They can be used as follows:
 
-## Operators
+```erlang                           
+% FCT                              INPUT(S)
+numerl:matrix([[1, 2.0],[3, 4.0]]).% L,lists of lists of numberss.
+numerl:rnd_matrix(2).              % N,  create random   matrix of size NxN.
+numerl:eye(2).                     % N,  create identity matrix of size NxN.
+numerl:zeros(2, 2).                % N,M create empty    matrix of size NxM.
+```
 
-The following operators are implemented: comparison, addition, and multiplication.
+## Comparison
+
+Matrices are stored as arrays of doubles, the granularity of which makes the =/2 operator unadviced. Instead, numerl provides it's own comparison operator:
 
 ```erlang
-NotTrue = numerl:equals(L0, Eye).
-Eye2    = numerl:add(Eye, Zeros).
-Neye    = numerl:sub(Zeros, Eye).
-Mult    = numerl:mult(L0, L0). %Arg2 either matrix (elemt-wise op) or number
-D       = numerl:div(L0, 2).   %Arg2 number.
-Inv     = numerl:inv(L0).       %Arg2 
-Tr      = numerl:transpose(L0).
+Comparator = [equals/2].
+```
+
+It can be used as follows:
+
+```erlang                                    
+E = numerl:eye(2),                 %
+Z = nmerl:zeros(2,2),              %
+%FCT                               INPUTS
+Boolean = numerl:equals(E,Z).      % M1,M2: compared matrices.
 ```
 
 ## Accessors
-
-Access to elements / columns / rows of matrices is done as such:
-
+Matrices content can be extracted with the following functions:
 ```erlang
-One     = numerl:get(Eye, 1,1).
-OneO    = numerl:row(Eye, 1).
-OOne    = numerl:col(Eye, 2).
-[1]     = numerl:mtfli(numerl:matrix([[1.0]])). %Matrix to flattened list of int.
-1.0     = numerl:at(Eye,1). %Returns N'th value in flattened array.
-```
-        
-The function print can be used to return an atom representation of a matrix.
-
-```erlang
-1> numerl:print(numerl:eye(2)).
-'[[1.00000 0.00000][0.00000 1.00000]]'
-```
-## BLAS
-
-BLAS are stardard, highly optimized functions used to compute operations between matrices and vectors. In numerl, vectors are simply matrices with at least one dimension of size 1:
-
-```erlang
-X = numerl:matrix([[1.0, 2.0]]).
-Y = numerl:matrix([[3], [4]]).
-```
-    
-The following variables are used to give examples.
-
-```erlang
-N = 2.
-Alpha = 1.0.
-Beta = 2.0.
-A = numerl:eye(2).
-B = numerl:eye(2).
-C = numerl:zeros(2,2).
+Accesors = [mtfli/1, mtfl/1, row/2, col/2, get/3, at/2].
 ```
 
-ddot returns the dot produtc of the first N values contained in X and Y, vectors.
-
-```erlang
-DotRes = numerl:ddot(N,X,Y).
+```erlang                             
+M = numerl:rnd_matrix(5),          %
+N = 1,                             %
+O = 1,                             %
+%FCT                               OUTPUT
+numerl:mtfli(M),                   % M as a flattened list of ints
+numerl:mtfl(M),                    % M as a flattened list of doubles
+numerl:row(M,N),                   % The N'th row of M as a matrix.
+numerl:col(M,N),                   % The N'th col of M as a matrix.
+numerl:get(N,O,M).                 % The element at position N,O of M.
+numerl:at(M,N).                    % The N'th element of the matrix.
 ```
 
-daxpy returns the result of Alpha\*X + Y taking into account the first N coordinates of vectors X and Y, alpha being a number.
+## Element-wise operations
+The following operations can be done element-wise on matrices:
 
 ```erlang
-DaxRes = numerl:daxpy(N, Alpha, X, Y).
+Element_wise_ops = [add/2, sub/2 ,mult/2, divide/2].
 ```
 
-dgemv returns the result of Alpha\*A\*X + Beta\*Y. Alpha and Beta are numbers; M is a matrix; X and Y are vectors.
+They have the following structure:
 
 ```erlang
-GemvRes = numerl:dgemv(Alpha, A, X, Beta, Y).
+%FCT                               INPUTS
+op(Lval, Rval).                    % Lval: a matrix, Rval: a matrix || a number
 ```
 
-dgemm returns the dot product of A*B.
+In case of ```erlang divide/2 ``` operator, for an ```erlang Rval ``` either null or containing a null value, a badarg is thrown.   
+
+These ops can be combined with the ```erlang eval/1 ``` function:
 
 ```erlang
-GemmRes = numerl:dot(A, B).
+M = numerl:rnd_matrix(N),
+%FCT                               INPUTS
+eval([M, add, 1, div, 2, mult, M]).% L: a list of V1,Op1,V2,OP2...
 ```
 
-Support for LAPACKE (dgesv) was temporarily dropped for easier OSX integration.
+## MISC
+```erlang
+Misc_ops = [transpose/1].
+```
+
+## BLAS and LAPACKE
+```erlang
+BLAPACK = [inv/1, nrm2/1, vec_dot/2, dot/2].
+```
