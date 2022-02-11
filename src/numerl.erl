@@ -71,7 +71,7 @@ add(_, _) ->
     nif_not_loaded.
 
 
-%%Substraction of matrix.
+%%Subtraction of matrix.
 sub(_, _) ->
     nif_not_loaded.
 

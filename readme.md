@@ -26,7 +26,7 @@ Ubuntu-like os'es:
 ```
 
 macOS:   
-lapacke is included trough the accelerate framework; only openblas is required.
+lapacke is included through the accelerate framework; only openblas is required.
 ```sh
     brew install openblas
 ```
@@ -41,7 +41,7 @@ The following functions are available:
 ```erlang
 Constructors     = [matrix/1, rnd_matrix/1, eye/1, zeros/2].
 Comparator       = [equals/2].
-Accesors         = [mtfli/1, mtfl/1, get/3, at/2, row/2, col/2].
+Accessors         = [mtfli/1, mtfl/1, get/3, at/2, row/2, col/2].
 Element_wise_ops = [add/2, sub/2 ,mult/2, divide/2].
 Ops              = [inv/1, nrm2/1, vec_dot/2, dot/2, transpose/1].
 ```
@@ -94,7 +94,7 @@ Boolean = numerl:equals(E,Z).      % M1,M2: compared matrices.
 ## Accessors
 Matrices content can be extracted with the following functions:
 ```erlang
-Accesors = [mtfli/1, mtfl/1, row/2, col/2, get/3, at/2].
+Accessors = [mtfli/1, mtfl/1, row/2, col/2, get/3, at/2].
 ```
 
 They are used as such:

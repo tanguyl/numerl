@@ -81,7 +81,7 @@ Matrix matrix_alloc(int n_rows, int n_cols){
 }
 
 //Creates a duplicate of a matrix.
-//This duplicate can be modified untill uploaded.
+//This duplicate can be modified until uploaded.
 Matrix matrix_dup(Matrix m){
     Matrix d = matrix_alloc(m.n_rows, m.n_cols);
     memcpy(d.content, m.content, d.bin.size);
@@ -148,7 +148,7 @@ int enif_get_matrix(ErlNifEnv* env, ERL_NIF_TERM term, Matrix *dest){
 }
 
 //Used to translate at once a number of ERL_NIF_TERM.
-//Data types are infered via content of format string:
+//Data types are inferred via content of format string:
 //  n: number (int or double) translated to double.
 //  m: matrix
 //  i: int
@@ -344,7 +344,7 @@ ERL_NIF_TERM nif_mtfl(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 //Equal all doubles
-//Compares wether all doubles are approximatively the same.
+//Compares whether all doubles are approximately the same.
 int equal_ad(double* a, double* b, int size){
     for(int i = 0; i<size; i++){
         if(fabs(a[i] - b[i])> 1e-6)
@@ -510,7 +510,7 @@ ERL_NIF_TERM nif_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 }
 
 
-//Either element-wise substraction, or substraction of a matrix by a number.
+//Either element-wise subtraction, or subtraction of a matrix by a number.
 ERL_NIF_TERM nif_sub(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     Matrix a,b;
