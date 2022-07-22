@@ -580,7 +580,6 @@ ERL_NIF_TERM nif_divide(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
 ERL_NIF_TERM nif_sqrt(ErlNifEnv *env, int argc,  const ERL_NIF_TERM argv[]){
     Matrix a,b;
-    double c;
     
     if(!enif_get(env, argv, "m", &a))
         return enif_make_badarg(env);
@@ -588,6 +587,20 @@ ERL_NIF_TERM nif_sqrt(ErlNifEnv *env, int argc,  const ERL_NIF_TERM argv[]){
     b = matrix_dup(a);
     for(int i = 0; i < a.n_rows*a.n_cols; i++){
         b.content[i] = sqrt(a.content[i]);
+    }
+
+    return matrix_to_erl(env, b);
+}
+
+ERL_NIF_TERM nif_abs(ErlNifEnv *env, int argc,  const ERL_NIF_TERM argv[]){
+    Matrix a,b;
+    
+    if(!enif_get(env, argv, "m", &a))
+        return enif_make_badarg(env);
+    
+    b = matrix_dup(a);
+    for(int i = 0; i < a.n_rows*a.n_cols; i++){
+        b.content[i] = abs(a.content[i]);
     }
 
     return matrix_to_erl(env, b);
@@ -784,6 +797,7 @@ ErlNifFunc nif_funcs[] = {
     {"sub",  2, nif_sub},
     {"divide", 2, nif_divide},
     {"sqrt", 1, nif_sqrt},
+    {"abs", 1, nif_abs},
     {"transpose", 1, nif_transpose},
     {"inv", 1, nif_inv},
     

@@ -1,6 +1,6 @@
 -module(numerl).
 -on_load(init/0).
--export([ eval/1, eye/1, zeros/2, equals/2, add/2, sub/2,mult/2, divide/2, sqrt/1, matrix/1, rnd_matrix/1, get/3, at/2, mtfli/1, mtfl/1, row/2, col/2, transpose/1, inv/1, nrm2/1, vec_dot/2, dot/2]).
+-export([ eval/1, eye/1, zeros/2, equals/2, add/2, sub/2,mult/2, divide/2, sqrt/1, abs/1, matrix/1, rnd_matrix/1, get/3, at/2, mtfli/1, mtfl/1, row/2, col/2, transpose/1, inv/1, nrm2/1, vec_dot/2, dot/2]).
 
 %Matrices are represented as such:
 %-record(matrix, {n_rows, n_cols, bin}).
@@ -94,6 +94,9 @@ divide(_,_)->
 sqrt(_)->
     nif_not_loaded.
 
+%Return the absolute value of a matrix.
+abs(_)->
+    nif_not_loaded.
 
 %% build a null matrix of size NxM
 zeros(_, _) ->
