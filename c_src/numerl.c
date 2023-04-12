@@ -741,11 +741,15 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
     
+    debug_write_matrix(A);
+    debug_write_matrix(B);
+
     Matrix C = matrix_alloc(A.n_rows, B.n_cols);
+    debug_write_matrix(C);
 
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
     A.n_rows, B.n_cols, A.n_cols,
-    alpha, A.content, A.n_cols, B.content, B.n_rows, 
+    alpha, A.content, A.n_cols, B.content, B.n_cols, 
     1.0, C.content, C.n_cols);
 
     return matrix_to_erl(env, C);

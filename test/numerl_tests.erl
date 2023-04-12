@@ -1,6 +1,12 @@
 -module(numerl_tests).
 -include_lib("eunit/include/eunit.hrl").
 
+issue_16_dot_test()->
+    C = numerl:matrix([[1,2], [3,4]]),
+    D = numerl:matrix([[5], [6]]),
+    R = numerl:dot(C,D),
+    [17.0,39.0] = numerl:mtfl(R).
+
 matrix_test() ->
     M0 = [[1.0, 0.0], [0.0, 1.0]],
     _ = numerl:matrix(M0).
