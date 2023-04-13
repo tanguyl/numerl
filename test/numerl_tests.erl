@@ -1,11 +1,24 @@
 -module(numerl_tests).
 -include_lib("eunit/include/eunit.hrl").
 
+issue_16_repeat_test()->
+    Loop = 
+    fun F(0)-> ok;
+        F(I)->
+            R = [19,22,43,50],
+            C = numerl:matrix([[1,2], [3,4]]),
+            D = numerl:matrix([[5,6], [7,8]]),
+            R = numerl:mtfli(numerl:dot(C,D)),
+            F(I-1)
+    end,
+    Loop(10).
+
 issue_16_dot_test()->
     C = numerl:matrix([[1,2], [3,4]]),
     D = numerl:matrix([[5], [6]]),
     R = numerl:dot(C,D),
     [17.0,39.0] = numerl:mtfl(R).
+    
 
 matrix_test() ->
     M0 = [[1.0, 0.0], [0.0, 1.0]],

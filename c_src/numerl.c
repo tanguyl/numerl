@@ -732,8 +732,6 @@ ERL_NIF_TERM nif_dgemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 //Arguments: double alpha, matrix A, matrix B, double beta, matrix C
 ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix A, B;
-    double alpha = 1.0;
-    double beta = 0.0;
 
     if(!enif_get(env, argv, "mm", &A, &B)
             || A.n_cols != B.n_rows){
@@ -741,16 +739,18 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         return enif_make_badarg(env);
     }
     
-    debug_write_matrix(A);
-    debug_write_matrix(B);
+    //debug_write_matrix(A);
+    //debug_write_matrix(B);
 
     Matrix C = matrix_alloc(A.n_rows, B.n_cols);
-    debug_write_matrix(C);
+    //debug_write_matrix(C);
 
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
     A.n_rows, B.n_cols, A.n_cols,
-    alpha, A.content, A.n_cols, B.content, B.n_cols, 
-    1.0, C.content, C.n_cols);
+    1.0, A.content, A.n_cols, B.content, B.n_cols, 
+    0.0, C.content, C.n_cols);
+
+    //debug_write_matrix(C);
 
     return matrix_to_erl(env, C);
 }
