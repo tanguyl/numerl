@@ -30,6 +30,7 @@ ERL_NIF_TERM atom_nok;
 ERL_NIF_TERM atom_true;
 ERL_NIF_TERM atom_false;
 ERL_NIF_TERM atom_matrix;
+const int CSTE_TIMESLICE = 5;
 
 ErlNifResourceType *MULT_YIELDING_ARG = NULL;
 
@@ -237,7 +238,7 @@ ERL_NIF_TERM nif_matrix(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
             dest++;
         }
     }
-
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return matrix_to_erl(env, m);
 }
 
@@ -321,6 +322,7 @@ ERL_NIF_TERM nif_mtfli(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     }
     
     ERL_NIF_TERM result = enif_make_list_from_array(env, arr, n_elems);
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     enif_free(arr);
     return result;
 }
@@ -340,6 +342,7 @@ ERL_NIF_TERM nif_mtfl(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     
     ERL_NIF_TERM result = enif_make_list_from_array(env, arr, n_elems);
     enif_free(arr);
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return result;
 }
 
@@ -370,6 +373,7 @@ ERL_NIF_TERM nif_equals(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     if(!equal_ad(a.content, b.content, a.n_cols*a.n_rows))
         return atom_false;
     
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return atom_true;
 }
 
@@ -389,7 +393,8 @@ ERL_NIF_TERM nif_row(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
 
     Matrix row = matrix_alloc(1, matrix.n_cols);
     memcpy(row.content, matrix.content + (row_req * matrix.n_cols), matrix.n_cols*sizeof(double));
-
+    
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return matrix_to_erl(env, row);
 }
 
@@ -413,7 +418,8 @@ ERL_NIF_TERM nif_col(ErlNifEnv * env, int argc, const ERL_NIF_TERM argv[]){
     for(int i = 0; i < matrix.n_rows; i++){
         col.content[i] = matrix.content[i * matrix.n_rows + col_req];
     }
-
+    
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return matrix_to_erl(env, col);
 }
 
@@ -428,6 +434,7 @@ ERL_NIF_TERM nif_zeros(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
 
     Matrix a = matrix_alloc(m,n);
     memset(a.content, 0, sizeof(double)*m*n);
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return matrix_to_erl(env, a);
 }
 
@@ -447,6 +454,7 @@ ERL_NIF_TERM nif_eye(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     for(int i = 0; i<m; i++){
         a.content[i*m+i] = 1.0;
     }
+    enif_consume_timeslice(env, CSTE_TIMESLICE);
     return matrix_to_erl(env, a);
 }
 
@@ -462,6 +470,8 @@ ERL_NIF_TERM nif_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         for(int i = 0; i<a.n_cols*a.n_rows; i++){
             d.content[i] = a.content[i] * c;
         }
+        
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
     else 
@@ -473,9 +483,11 @@ ERL_NIF_TERM nif_mult(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         for(int i = 0; i < a.n_rows*a.n_cols; i++){
             d.content[i] = a.content[i] * b.content[i];
         }
+        
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
-
+    
     return enif_make_badarg(env);
 }
 
@@ -492,6 +504,8 @@ ERL_NIF_TERM nif_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         for(int i = 0; i<a.n_cols*a.n_rows; i++){
             d.content[i] = a.content[i] + c;
         }
+        
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
     else 
@@ -503,6 +517,7 @@ ERL_NIF_TERM nif_add(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         for(int i = 0; i < a.n_rows*a.n_cols; i++){
             d.content[i] = a.content[i] + b.content[i];
         }
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
 
@@ -522,6 +537,7 @@ ERL_NIF_TERM nif_sub(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         for(int i = 0; i<a.n_cols*a.n_rows; i++){
             d.content[i] = a.content[i] - c;
         }
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
     else 
@@ -533,6 +549,7 @@ ERL_NIF_TERM nif_sub(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
         for(int i = 0; i < a.n_rows*a.n_cols; i++){
             d.content[i] = a.content[i] - b.content[i];
         }
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
 
@@ -554,6 +571,7 @@ ERL_NIF_TERM nif_divide(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
             for(int i = 0; i<a.n_cols*a.n_rows; i++){
                 d.content[i] = a.content[i] / c;
             }
+            enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
             return matrix_to_erl(env, d);
         }
     }
@@ -570,6 +588,7 @@ ERL_NIF_TERM nif_divide(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
                 d.content[i] = a.content[i] / b.content[i];
             }
         }
+        enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
         return matrix_to_erl(env, d);
     }
 
@@ -593,7 +612,7 @@ ERL_NIF_TERM nif_transpose(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix a;
     if(!enif_get_matrix(env, argv[0], &a))
         return enif_make_badarg(env);
-
+    enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
     return matrix_to_erl(env, tr(a));
 }
 
@@ -631,7 +650,7 @@ ERL_NIF_TERM nif_inv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     }
     else result = matrix_to_erl(env, inv);
 
-
+    enif_consume_timeslice(env, a.n_cols*a.n_rows / 100);
     return result;
 }
 
@@ -651,7 +670,7 @@ ERL_NIF_TERM nif_dnrm2(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     }
 
     double result = cblas_dnrm2(x.n_cols*x.n_rows, x.content, 1);
-
+    enif_consume_timeslice(env, x.n_cols*x.n_rows / 100);
     return enif_make_double(env, result);
 }
 
@@ -671,7 +690,7 @@ ERL_NIF_TERM nif_ddot(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     }
 
     double result = cblas_ddot(n, x.content, 1, y.content, 1);
-
+    enif_consume_timeslice(env, n / 100);
     return enif_make_double(env, result);
 }
 
@@ -697,7 +716,7 @@ ERL_NIF_TERM nif_daxpy(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix ny = matrix_dup(y);
 
     cblas_daxpy(n, alpha, x.content, 1, ny.content, 1);
-
+    enif_consume_timeslice(env, n / 100);
     return matrix_to_erl(env, ny);
 }
 
@@ -723,7 +742,7 @@ ERL_NIF_TERM nif_dgemv(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     Matrix ny = matrix_dup(y);
 
     cblas_dgemv(CblasRowMajor, CblasNoTrans, A.n_rows, A.n_cols, alpha, A.content, A.n_rows, x.content, 1,  beta, ny.content, 1);
-
+    enif_consume_timeslice(env, A.n_cols*A.n_rows / 100);
     return matrix_to_erl(env, ny);
 }
 
@@ -751,7 +770,7 @@ ERL_NIF_TERM nif_dgemm(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]){
     0.0, C.content, C.n_cols);
 
     //debug_write_matrix(C);
-
+    enif_consume_timeslice(env, A.n_cols*A.n_rows*B.n_rows / 100);
     return matrix_to_erl(env, C);
 }
 
