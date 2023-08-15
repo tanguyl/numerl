@@ -46,7 +46,7 @@ copy(#array{encoding=Encoding, data=Ld}, #array{encoding=Encoding, data=Rd}, N)-
 
 add(Lhs=#array{encoding=Encoding,shape=LShape}, Rhs=#array{encoding=Encoding,shape=RShape})->
     % Unify the shapes: unified left,right, out shapes
-    Shapes = {ULS,URS,UOS} = lists:unzip3(lists:foldr(
+    {ULS,URS,UOS} = lists:unzip3(lists:foldr(
         fun
             ({V,V}, Acc) -> [{V,V,V}|Acc];
             ({V,1}, Acc) -> [{V,1,V}|Acc];
@@ -55,23 +55,25 @@ add(Lhs=#array{encoding=Encoding,shape=LShape}, Rhs=#array{encoding=Encoding,sha
         [],
         lists:reverse(lists:zip(lists:reverse(LShape), lists:reverse(RShape), {pad, {1,1}}))
     )),
-    %io:format("Shapes are ~w~n", [Shapes]),
-    Out   = array(Encoding, UOS),
+    Out = array(Encoding, UOS),
     broadcast(Lhs#array{shape=ULS}, Rhs#array{shape=URS}, Out, fun add/3).
 
            
-add({array, Encoding, I, Ld}, Rhs, D={array, Encoding, N, Dd})->
-    {LI,LN} = {lists:last(I), lists:last(N)},
-    K = if LI == 1 -> 0; true -> 1 end,
-    L = if LN == 1 -> 0; true -> 1 end,
-    copy(Rhs,D, LN),
-    case Encoding of
-        float32    -> blas:run({saxpy, LN, 1.0, Ld, K, Dd, L});
-        float64    -> blas:run({daxpy, LN, 1.0, Ld, K, Dd, L});
-        complex64  -> blas:run({caxpy, LN, [1.0, 0.0], Ld, K, Dd, L});
-        complex128 -> blas:run({zaxpy, LN, [1.0, 0.0], Ld, K, Dd, L})
-    end,
-    D.
+add(Lhs={array, Encoding, I, Ld}, Rhs=#array{shape=RS}, D={array, Encoding, _, Dd})->
+    {LI,LN} = {lists:last(I), lists:last(RS)},
+    if LI > LN -> add(Rhs, Lhs, D);
+    true ->
+        K = if LI == 1 -> 0; true -> 1 end,
+        L = if LN == 1 -> 0; true -> 1 end,
+        copy(Rhs, D, LN),
+        case Encoding of
+            float32    -> blas:run({saxpy, LN, 1.0, Ld, K, Dd, L});
+            float64    -> blas:run({daxpy, LN, 1.0, Ld, K, Dd, L});
+            complex64  -> blas:run({caxpy, LN, [1.0, 0.0], Ld, K, Dd, L});
+            complex128 -> blas:run({zaxpy, LN, [1.0, 0.0], Ld, K, Dd, L})
+        end,
+        D
+    end.
 
 
 
@@ -97,7 +99,7 @@ broadcast(Lhs=#array{encoding=Encoding},
 )->    
     CurIt  = [0 || _ <- OShape],
 
-    Iteration = fun LocalIt(ILhs,IRhs,IOut, ItCounter)->
+    Iteration = fun LocalIt(ILhs, IRhs, IOut, ItCounter)->
         io:format("~nNew iteration: it is ~w.~n", [ItCounter]),
         Fct(ILhs, IRhs, IOut),
         if 
@@ -118,7 +120,7 @@ broadcast(Lhs=#array{encoding=Encoding},
                 io:format("Finished? ~w~n", [Stop]),
                 if 
                     Stop == 1 -> Out;
-                    true           -> LocalIt(shift(Lhs,NextIt), shift(Rhs,NextIt), shift(Out,NextIt), NextIt)
+                    true      -> LocalIt(shift(Lhs,NextIt), shift(Rhs,NextIt), shift(Out,NextIt), NextIt)
                 end
             end
         end,

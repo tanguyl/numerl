@@ -37,9 +37,10 @@ broadcast_cmp_numpy_test() ->
                     ok;
                 [Rhs, Lhs, Result] ->
                     io:format("Testing line : ~b~n", [I]),
-                    Obtained = numerl:to_list(numerl:add(Lhs, Rhs)),
-                    io:format("Obtained ~w",[Obtained]),
-                    Obtained = numerl:to_list(Result),
+                    Obtained1 = numerl:to_list(numerl:add(Lhs, Rhs)),
+                    Obtained2 = numerl:to_list(numerl:add(Rhs, Lhs)),
+                    Obtained1 = numerl:to_list(Result),
+                    Obtained2 = numerl:to_list(Result),
                     L(I+4);
                 _ -> 
                     L(I+1)
