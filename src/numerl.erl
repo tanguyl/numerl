@@ -1,131 +1,144 @@
 -module(numerl).
--on_load(init/0).
--export([ eval/1, eye/1, zeros/2, equals/2, add/2, sub/2,mult/2, divide/2, matrix/1, rnd_matrix/1, get/3, at/2, mtfli/1, mtfl/1, row/2, col/2, transpose/1, inv/1, nrm2/1, vec_dot/2, dot/2]).
+-export([to_list/1, array/2, array/3, add/2, add/3]).
 
-%Matrices are represented as such:
-%-record(matrix, {n_rows, n_cols, bin}).
-
-init()->
-  Dir = case code:priv_dir(numerl) of
-              {error, bad_name} ->
-                  filename:join(
-                    filename:dirname(
-                      filename:dirname(
-                        code:which(?MODULE))), "priv");
-              D -> D
-          end,
-    SoName = filename:join(Dir, atom_to_list(?MODULE)),
-    erlang:load_nif(SoName, 0).
-
-%Creates a random matrix.
-rnd_matrix(N)->
-    L = [[rand:uniform(20) || _ <- lists:seq(1,N) ] || _ <- lists:seq(1,N)],
-    matrix(L).
-
-%Combine multiple functions.
-eval([L,O,R|T])->
-    F = fun numerl:O/2,
-    eval([F(L,R) |T]);
-eval([Res])->
-    Res.
-
-%%Creates a matrix.
-%List: List of doubles, of length N.
-%Return: a matrix of dimension MxN, containing the data.
-matrix(_) ->
-    nif_not_loaded.
-
-%%Returns the Nth value contained within Matrix.
-at(_Matrix,_Nth)->
-    nif_not_loaded.
-
-%%Returns the matrix as a flattened list of ints.
-mtfli(_mtrix)->
-    nif_not_loaded.
-
-%%Returns the matrix as a flattened list of doubles.
-mtfl(_mtrix)->
-    nif_not_loaded.
-
-%%Returns a value from a matrix.
-get(_,_,_) ->
-    nif_not_loaded.
-
-%%Returns requested row. 
-row(_,_) ->
-    nif_not_loaded.
+-record(array, {encoding, shape, data}).
 
 
-%%Returns requested col.
-col(_,_) ->
-    nif_not_loaded.
+array(Shape, Content) when is_list(Shape)->
+    array(float64, Shape, Content);
+array(Encoding, Shape) when is_atom(Encoding), is_list(Shape)->
+    N_elem = lists:foldr(fun(Dim,Acc)->Dim*Acc end, 1, Shape),
+    #array{encoding=Encoding, shape=Shape, data=blas:new(N_elem*elem_size(Encoding))}.
+
+array(Encoding, Shape, Content)->
+    Data = blas:new(Encoding, Content),
+    #array{encoding=Encoding, shape=Shape, data=Data}.
 
 
-%%Equality test between matrixes.
-equals(_, _) ->
-    nif_not_loaded.
+to_list(#array{encoding=Encoding, data=Data})->
+    Binary = blas:to_bin(Data),
+    case Encoding of 
+        int64       -> [ V || <<V:64/native-integer>> <= Binary ];
+        float32     -> [ V || <<V:32/native-float>>   <= Binary ];
+        float64     -> [ V || <<V:64/native-float>>   <= Binary ];
+        complex64   -> [ V || <<V:32/native-float>>   <= Binary ];
+        complex128  -> [ V || <<V:64/native-float>>   <= Binary ]
+    end.
 
 
-%%Addition of matrix.
-add(_, _) ->
-    nif_not_loaded.
+elem_size(Encoding)->
+    case Encoding of
+        int64       -> 8;
+        float32     -> 4;
+        float64     -> 8;
+        complex64   -> 8;
+        complex128  -> 16
+    end.
+
+%Copy from lhs to rhs the N elements.
+copy(#array{encoding=Encoding, data=Ld}, #array{encoding=Encoding, data=Rd}, N)->
+    case Encoding of 
+        float32    -> blas:run({scopy, N, Ld, 1, Rd, 1});
+        float64    -> blas:run({dcopy, N, Ld, 1, Rd, 1});
+        complex64  -> blas:run({ccopy, N, Ld, 1, Rd, 1});
+        complex128 -> blas:run({zcopy, N, Ld, 1, Rd, 1})
+    end.
+
+add(Lhs=#array{encoding=Encoding,shape=LShape}, Rhs=#array{encoding=Encoding,shape=RShape})->
+    % Unify the shapes: unified left,right, out shapes
+    Shapes = {ULS,URS,UOS} = lists:unzip3(lists:foldr(
+        fun
+            ({V,V}, Acc) -> [{V,V,V}|Acc];
+            ({V,1}, Acc) -> [{V,1,V}|Acc];
+            ({1,V}, Acc) -> [{1,V,V}|Acc]
+        end,
+        [],
+        lists:reverse(lists:zip(lists:reverse(LShape), lists:reverse(RShape), {pad, {1,1}}))
+    )),
+    %io:format("Shapes are ~w~n", [Shapes]),
+    Out   = array(Encoding, UOS),
+    broadcast(Lhs#array{shape=ULS}, Rhs#array{shape=URS}, Out, fun add/3).
+
+           
+add({array, Encoding, I, Ld}, Rhs, D={array, Encoding, N, Dd})->
+    {LI,LN} = {lists:last(I), lists:last(N)},
+    K = if LI == 1 -> 0; true -> 1 end,
+    L = if LN == 1 -> 0; true -> 1 end,
+    copy(Rhs,D, LN),
+    case Encoding of
+        float32    -> blas:run({saxpy, LN, 1.0, Ld, K, Dd, L});
+        float64    -> blas:run({daxpy, LN, 1.0, Ld, K, Dd, L});
+        complex64  -> blas:run({caxpy, LN, [1.0, 0.0], Ld, K, Dd, L});
+        complex128 -> blas:run({zaxpy, LN, [1.0, 0.0], Ld, K, Dd, L})
+    end,
+    D.
 
 
-%%Subtraction of matrix.
-sub(_, _) ->
-    nif_not_loaded.
+
+shift(Arr={array, Encoding, Shape, Data}, Steps)->
+    % In shape, for each step, shift accordingly the array.
+    {DimSize,_} = lists:mapfoldr(fun(V,Acc)-> {Acc, V*Acc} end, elem_size(Encoding), Shape),
+    Shift = lists:foldr(
+        fun
+            ({1, _, _},          Acc)                     -> Acc;
+            ({IShape, IStep, _}, Acc) when IShape < IStep -> Acc;
+            ({_,IStep, ISize},   Acc)                     -> Acc + ISize*IStep 
+        end,
+        0,
+        apply(lists, zip3, lists:map(fun lists:droplast/1, [Shape, Steps, DimSize]))
+    ),
+    io:format("Applying shift ~w to ~w ~n", [Shift, Arr]),
+    Arr#array{data=blas:shift(Shift, Data)}.
+
+broadcast(Lhs=#array{encoding=Encoding},
+          Rhs=#array{encoding=Encoding},
+          Out=#array{encoding=Encoding, shape=OShape},
+          Fct
+)->    
+    CurIt  = [0 || _ <- OShape],
+
+    Iteration = fun LocalIt(ILhs,IRhs,IOut, ItCounter)->
+        io:format("~nNew iteration: it is ~w.~n", [ItCounter]),
+        Fct(ILhs, IRhs, IOut),
+        if 
+            length(OShape) == 1 ->
+                Out;
+            true ->
+                {NextIt, Stop} = lists:mapfoldr(
+                    fun({Step,Max},Acc) -> 
+                        Val = Step+Acc,
+                        if 
+                            Val >= Max -> {0,1};
+                            true       -> {Val,0}
+                        end
+                    end,
+                    lists:last(OShape) + 1,
+                    lists:zip(ItCounter, OShape)
+                ),
+                io:format("Finished? ~w~n", [Stop]),
+                if 
+                    Stop == 1 -> Out;
+                    true           -> LocalIt(shift(Lhs,NextIt), shift(Rhs,NextIt), shift(Out,NextIt), NextIt)
+                end
+            end
+        end,
+        Iteration(Lhs, Rhs, Out, CurIt).
 
 
-%% Matrix multiplication.
-mult(A,B) when is_number(B) -> '*_num'(A,B);
-mult(A,B) -> '*_matrix'(A,B).
+%matmul({array, Encoding, [N,M], Ld}, {array, Encoding, [M,K], Rd})->
+%    Ed = blas:new(N*K*elem_size(Encoding)),
+%%    case Encoding of 
+%        float32    -> blas:run({sgemm, blasRowMajor, n,n, N,M,K, 1.0,  Ld,N, Rd,M, 0.0,  Ed,N});
+%        float64    -> blas:run({dgemm, blasRowMajor, n,n, N,M,K, 1.0,  Ld,N, Rd,M, 0.0,  Ed,N});
+%%        complex64  -> blas:run({cgemm, blasRowMajor, n,n, N,M,K, [1,0],Ld,N, Rd,M, [0,0],Ed,N});
+%        complex128 -> blas:run({zgemm, blasRowMajor, n,n, N,M,K, [1,0],Ld,N, Rd,M, [0.0],Ed,N})
+%    end,
+%    {array, Encoding, [N,K], Ed}.
 
-'*_num'(_,_)->
-    nif_not_loaded.
-
-'*_matrix'(_, _)->
-    nif_not_loaded.
-
-%Matrix division by a number
-divide(_,_)->
-    nif_not_loaded.
-
-
-%% build a null matrix of size NxM
-zeros(_, _) ->
-    nif_not_loaded.
-
-%%Returns an Identity matrix NxN.
-eye(_)->
-    nif_not_loaded.
-
-%Returns the transpose of the given square matrix.
-transpose(_)->
-    nif_not_loaded.
-
-%Returns the inverse of asked square matrix.
-inv(_)->
-    nif_not_loaded.
-
-
-%------CBLAS--------
-
-%nrm2
-%Calculates the squared root of the sum of the squared contents.
-nrm2(_)->
-    nif_not_loaded.
-
-% : dot product of two vectors
-% Arguments: vector x, vector y.
-%   x and y are matrices
-% Returns the dot product of all the coordinates of X,Y.
-vec_dot(_, _)->
-    nif_not_loaded.
-
-% dgemm: A dot B 
-% Arguments: Matrix A, Matrix B.
-%   alpha, beta: numbers (float or ints) used as doubles.
-%   A,B,C: matrices.
-% Returns the matrice resulting of the operations alpha * A * B + beta * C.
-dot(_,_)->
-    nif_not_loaded.
+%dot({array, Encoding, [N], Ld}, {array, Encoding, [N], Rd})->
+%    case Encoding of 
+%        float32    -> blas:run({sdot, N, Ld, 1, Rd, 1});
+%        float64    -> blas:run({ddot, N, Ld, 1, Rd, 1});
+%        complex64  -> blas:run({cdot, N, Ld, 1, Rd, 1});
+%        complex128 -> blas:run({zdot, N, Ld, 1, Rd, 1})
+%    end.
